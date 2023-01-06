@@ -1,0 +1,3 @@
+jira==2.0.0
+bson
+pydantic

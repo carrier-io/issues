@@ -1,0 +1,6 @@
+{
+  "name": "Issues",
+  "version": "0.1",
+  "depends_on": ["shared", "auth", "theme", "shared_orch"],
+  "init_after": []
+}
