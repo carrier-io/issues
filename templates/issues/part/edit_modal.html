@@ -1,0 +1,77 @@
+<div id="modal-edit" class="modal modal-small fixed-left fade shadow-sm" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-aside" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="row w-100">
+                    <div class="col">
+                        <h2>Update  Activity</h2>
+                    </div>
+                    <div class="col-xs">
+                        <button type="button" class="btn  btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
+                            Cancel
+                        </button>
+                        <button type="button" id="edit" class="btn btn-basic">Save</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit">
+                    <div class="section">
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="input-name">Activity Title</label>
+                                    <input type="text" class="form-control" name="snapshot.title" id="input-title">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="text-goal">Description</label>
+                                    <textarea class="form-control" name="snapshot.description" rows="8" id="text-description"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="input-severity">Severity</label>
+                                    <select class="selectpicker dropdown-menu__simple d-block" data-style="btn" name="snapshot.severity" id="input-severity">
+                                      <option value="Critical">Critical</option>
+                                      <option value="High">High</option>
+                                      <option value="Medium">Medium</option>
+                                      <option value="Low">Low</option>
+                                      <option value="Info">Info</option>
+                                    </select>
+                                  </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="input-project">Project</label>
+                                    <input type="text" class="form-control" name="snapshot.project" id="input-project" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                  <label for="input-asset">Asset</label>
+                                  <input type="text" class="form-control" name="snapshot.asset" id="input-asset" placeholder="">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

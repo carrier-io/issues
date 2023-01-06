@@ -1,0 +1,144 @@
+<div id="modal-view" class="modal fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="lgModal">
+  <div class="modal-dialog modal-dialog-aside" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <div class="row w-100">
+                  <div class="col">
+                      <h2>View issue record</h2>
+                  </div>
+                  <div class="col-xs">
+                      <button type="button" class="btn  btn-secondary" data-dismiss="modal" aria-label="Close">
+                          Close
+                      </button>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-body">
+              <div class="section">
+                  <div class="row">
+                      <div class="col sidebar">
+                        <div class="card bg-light mb-3">
+                          <div class="card-header">KB</div>
+                          <div class="card-body">
+                            <p>Here you can find information on how to deal with record in current status</p>
+                            <p>
+                              Steps to follow:
+                              <ul>
+                                <li>Not enabled</li>
+                              </ul>
+                            </p>
+                          </div>
+                        </div>
+            
+                        <div class="card bg-light mb-3">
+                          <div class="card-header">JIRA</div>
+                          <div class="card-body">
+                            <p>Linked JIRA ticket status: unknown</p>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Get ticket status
+                            </button>
+                          </div>
+                        </div>
+            
+                        <div class="card bg-light mb-3">
+                          <div class="card-header">Actions</div>
+                          <div class="card-body">
+                            <p>Issue opened by: Admin</p>
+                            <p>Issue booked by: -</p>
+                            <hr>
+                            <button class="btn btn-primary col" id="book-issue" disabled>
+                              Book issue
+                            </button>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Show vulnerability details
+                            </button>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Show related issues
+                            </button>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Enable editing
+                            </button>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Re-run automated processing
+                            </button>
+                            <hr>
+                            <button class="btn btn-primary col" disabled>
+                              Add comment / attachment
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col">
+                        <form id="form-view">
+                          <!-- <div class="form-group">
+                            <label for="view-data">Data</label>
+                            <textarea class="form-control" name="description" id="view-data" rows="5" disabled></textarea>
+                          </div> -->
+                          <div class="form-group">
+                            <label for="view-title">Title</label>
+                            <input type="text" class="form-control" name="title" id="view-title" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-description">Description</label>
+                            <textarea class="form-control" name="description" id="view-description" rows="8" disabled></textarea>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-severity">Severity</label>
+                            <select class="form-control" name="severity" id="view-severity" disabled>
+                              <option value="Critical">Critical</option>
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                              <option value="Info">Info</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-type">Type</label>
+                            <input type="text" class="form-control" name="type" id="view-type" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-project">Project</label>
+                            <input type="text" class="form-control" name="project" id="view-project" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-asset">Asset</label>
+                            <input type="text" class="form-control" name="asset" id="view-asset" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-status">Status</label>
+                            <input type="text" class="form-control" name="status" id="view-status" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-state">State</label>
+                            <input type="text" class="form-control" name="state" id="view-state" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-tags">Tags</label>
+                            <input type="text" class="form-control" name="tags" id="view-tags" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-jira">JIRA</label>
+                            <input type="text" class="form-control" name="jira" id="view-jira" placeholder="" disabled>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-logs">Logs</label>
+                            <textarea class="form-control" name="logs" id="view-logs" rows="5" disabled></textarea>
+                          </div>
+                          <div class="form-group">
+                            <label for="view-comments">Comments</label>
+                            <textarea class="form-control" name="comments" id="view-comments" rows="3" disabled></textarea>
+                          </div>
+                        </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+

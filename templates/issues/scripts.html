@@ -1,0 +1,11 @@
+<script src="{{ url_for('issues.static', filename='js/vendor/bootstrap-table.min.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/vendor/jquery.serialize-object.min.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/vendor/axios.min.js') }}"></script>
+
+<script>
+  var issues_api_url = "{{url_for('api.v1.issues.issues', project_id=project_id)}}";
+  var issue_detail_url = "{{url_for('api.v1.issues.issue', hash_id='1').rstrip('/1')}}"
+  var view_row_id = "";
+</script>
+
+<script src="{{ url_for('issues.static', filename='js/issues.js') }}"></script>
