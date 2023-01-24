@@ -38,8 +38,8 @@ class RPC:  # pylint: disable=E1101,R0903
 
     @web.rpc("issues_list_events", "list_events")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _list_events(self):
-        result_set = mongo.db.issue_events.find({})
+    def _list_events(self, project_id):
+        result_set = mongo.db.issue_events.find({'project_id': project_id})
         events = []
         for event in result_set:
             events.append(event)
@@ -48,11 +48,11 @@ class RPC:  # pylint: disable=E1101,R0903
 
     @web.rpc("issues_update_event", "update_event")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _update_event(self, id, payload):
+    def _update_event(self, project_id, id, payload):
         object_id = bson.ObjectId(id)
         payload = {"$set": payload}
         try:
-            mongo.db.issue_events.update_one({"_id": object_id}, payload)
+            mongo.db.issue_events.update_one({"_id": object_id, 'project_id': project_id}, payload)
         except Exception as e:
             return {"ok":False, "error": str(e)}
         return {'ok': True}
@@ -60,10 +60,10 @@ class RPC:  # pylint: disable=E1101,R0903
 
     @web.rpc("issues_delete_event", "delete_event")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _delete_event(self, id):
+    def _delete_event(self, project_id, id):
         object_id = bson.ObjectId(id)
         try:
-            mongo.db.issue_events.delete_one({"_id": object_id})
+            mongo.db.issue_events.delete_one({"_id": object_id, 'project_id': project_id})
         except Exception as e:
             return {"ok":True, "error":str(e)}
         return {"ok":True}

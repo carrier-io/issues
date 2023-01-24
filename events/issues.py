@@ -144,11 +144,13 @@ class Event:  # pylint: disable=E1101,R0903
         log.info("Event: %s - %s", event, payload)
         #
         fields = list(payload.keys())
+        project_id = payload['project_id']
         #
         events = mongo.db.issue_events.find({
             'field': {
-                '$in': fields
-            }
+                '$in': fields,
+            },
+            'project_id': project_id
         })
         for event in events:
             change_meta = payload[event['field']]
