@@ -27,13 +27,15 @@ from tools import rpc_tools, mongo  # pylint: disable=E0401
 class RPC:  # pylint: disable=E1101,R0903
     """ RPC Resource """
 
-
     @web.rpc("issues_get_issue", "get_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _get_issue(self, hash_id):
+    def _get_issue(self, project_id, hash_id):
         result = {"ok": True}
         try:
-            resp = mongo.db.issues.find_one({'id': uuid.UUID(hash_id)}, {'_id':0})
+            resp = mongo.db.issues.find_one({
+                'id': uuid.UUID(hash_id),
+                'project_id': project_id,
+            }, {'_id':0})
             log.info(resp)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -47,11 +49,12 @@ class RPC:  # pylint: disable=E1101,R0903
 
     @web.rpc("issues_delete_issue", "delete_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _delete_issue(self, hash_id):
+    def _delete_issue(self, project_id, hash_id):
         result = {'ok': True}
         try:
             resp = mongo.db.issues.delete_one({
-                "id": uuid.UUID(hash_id)
+                "id": uuid.UUID(hash_id),
+                "project_id": project_id,
             })
         except Exception as e:
             result['ok'] = False
@@ -62,8 +65,6 @@ class RPC:  # pylint: disable=E1101,R0903
             result['ok'] = False
             result['error'] = 'Not Found'
         return result 
-
-
 
     @web.rpc("issues_filter_present_issues", "filter_present_issues")
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -78,9 +79,10 @@ class RPC:  # pylint: disable=E1101,R0903
         )
         return [issue['source']['id'] for issue in issues]
 
+
     @web.rpc("issues_update_issue", "update_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _update_issue(self, id, payload):
+    def _update_issue(self, project_id, id, payload):
         issue = mongo.db.issues.find_one({"id": uuid.UUID(id)})
         if not issue:
             return {'ok':False, 'error': "Not found"}
@@ -90,7 +92,7 @@ class RPC:  # pylint: disable=E1101,R0903
         modified = response.modified_count > 0
         output = {'ok': True if modified else False}
         
-        event_payload = {}
+        event_payload = {'project_id': project_id}
         for key in payload.keys():
             event_payload[key] = {
                 'old_value': get_attr(issue, key),

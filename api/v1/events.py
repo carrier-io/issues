@@ -25,6 +25,8 @@ from plugins.issues.serializers.event import EventModel
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
 
+    url_params = ['<int:project_id>']
+
     def __init__(self, module):
         self.module = module
 
@@ -32,17 +34,17 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         event['id'] = str(event.pop('_id'))
 
     @auth.decorators.check_api(["orchestration_engineer"])
-    def get(self):  # pylint: disable=R0201
-        events = self.module.list_events()
+    def get(self, project_id):  # pylint: disable=R0201
+        events = self.module.list_events(project_id)
         for event in events:
             self._handle_ids(event)
         return {"ok":True, "items":events}, 200
 
     @auth.decorators.check_api(["orchestration_engineer"])
-    def post(self):
+    def post(self, project_id):
         payload = flask.request.json
         try:
-            event = EventModel(**payload)
+            event = EventModel(project_id=project_id, **payload)
         except Exception as e:
             return {"ok":False, 'error':str(e)}, 400
         

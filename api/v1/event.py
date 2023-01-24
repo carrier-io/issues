@@ -27,28 +27,27 @@ from plugins.issues.serializers.event import EventModel
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
 
-    url_params = ['<string:id>']
+    url_params = ['<int:project_id>/<string:id>']
 
     def __init__(self, module):
         self.module = module
 
-
     @auth.decorators.check_api(["orchestration_engineer"])
-    def put(self, id):  # pylint: disable=R0201
+    def put(self, project_id, id):  # pylint: disable=R0201
         payload = flask.request.json
         try:
-            event = EventModel(**payload)
+            event = EventModel(project_id=project_id, **payload)
             log.info(event)
         except ValidationError as e:
             return {"ok":False, 'error':str(e)}, 400
 
-        result = self.module.update_event(id, event.dict())
+        result = self.module.update_event(project_id, id, event.dict())
         status = 200 if result['ok'] else 400
         return result, status
 
 
     @auth.decorators.check_api(["orchestration_engineer"])
-    def delete(self, id):
-        result = self.module.delete_event(id)
+    def delete(self, project_id, id):
+        result = self.module.delete_event(project_id, id)
         status = 200 if result['ok'] else 400
         return result, status

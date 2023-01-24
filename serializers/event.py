@@ -6,6 +6,7 @@ class EventModel(BaseModel):
     old_value: str
     new_value: str
     event_name: str
+    project_id: int
 
     @root_validator
     def old_new_values_should_not_be_equal(cls, values):
