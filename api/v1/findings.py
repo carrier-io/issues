@@ -42,7 +42,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         for finding in findings:
             finding['centry_project_id'] = project_id
             if not search_issue(finding['issue_id']):
-                open_issue(self.module, finding)
+                open_issue(finding)
         return {"ok": True}, 201
 
 

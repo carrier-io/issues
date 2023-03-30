@@ -176,11 +176,8 @@ def get_snapshot(module, source_type, issue_id, project_id=None):
     return snapshot
 
 
-def open_issue(module, snapshot, jira=True):
-    data = insert_issue(snapshot)
-    if not jira:
-        return
-    create_jira_ticket(module, data)
+def open_issue(snapshot):
+    insert_issue(snapshot)
 
 
 def search_issue(hash_id):

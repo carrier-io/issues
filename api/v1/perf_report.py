@@ -35,7 +35,6 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     def post(self, project_id):  # pylint: disable=R0201
         report = flask.request.json
-        create_jira: bool = report.pop('jira_create', False)
         report['centry_project_id'] = project_id
-        open_issue(self.module, report, create_jira)
+        open_issue(report)
         return {"ok": True}, 201
