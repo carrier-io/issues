@@ -16,39 +16,45 @@
 #   limitations under the License.
 
 """ API """
-import flask
+from marshmallow.exceptions import ValidationError
+import flask  # pylint: disable=E0401
 import flask_restful  # pylint: disable=E0401
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401
 
 from tools import auth  # pylint: disable=E0401
-from ...serializers.issue import issue_schema
-from ...tools.utils import make_delete_response, make_response
+from plugins.issues.serializers.attachment import attachment_schema
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
     """ API Resource """
 
-    url_params = [
-        '<int:project_id>/<string:id>',
-        '<int:project_id>/<int:id>',
-    ]
+    url_params = ['<int:project_id>/<int:id>']
 
     def __init__(self, module):
         self.module = module
 
     @auth.decorators.check_api(["global_admin"])
-    def get(self, project_id, id):
-        fn = self.module.get_issue
-        return make_response(fn, issue_schema, project_id, id)
+    def put(self, project_id, id):
+        "Update attachment"
+        payload = flask.request.json
+        try:
+            payload = attachment_schema.load(payload, partial=True)
+        except ValidationError as err:
+            messages = getattr(err, 'messages', None)
+            return {"ok":False, "error": {**messages}}
+
+        result = self.module.update_attachment(project_id, id, payload)
+        if not result['ok']:
+            return result, 404
+        
+        result['item'] = attachment_schema.dump(result['item'])
+        return result, 200
+
 
     @auth.decorators.check_api(["global_admin"])
-    def put(self, project_id, id):
-        payload = flask.request.json
-        fn = self.module.update_issue
-        return make_response(fn, issue_schema, project_id, id, payload)
-  
-    @auth.decorators.check_api(["global_admin"])
     def delete(self, project_id, id):
-        fn = self.module.delete_issue
-        return make_delete_response(fn, project_id, id)
+        "Delete attachment"
+        result = self.module.delete_attachment(project_id, id)
+        status_code = 200 if result['ok'] else 404
+        return result, status_code

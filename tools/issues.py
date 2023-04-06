@@ -1,104 +1,50 @@
 import uuid
+from copy import copy
 from jira import JIRA  # pylint: disable=E0401
 from tools import mongo  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
+from ..models.issues import Issue
+from ..models.tags import Tag, Log
+from ..serializers.issue import issue_schema
+from tools import db
+from sqlalchemy.sql import exists
 
 
-def add_log_line(issue_id_uuid, log_line):
+def add_log_line(source_id, source_type, log_line):
     """ Tool """
-    mongo.db.issues.update_one(
-        {"id": issue_id_uuid},
-        {
-            "$push": {
-                "log": log_line,
-            },
-        },
-    )
-
+    issue = Issue.query.filter_by(
+        source_id=source_id, 
+        source_type=source_type
+    ).first()
+    Log.create({'log':log_line, 'issue_id':issue.id})
 
 def add_tag(issue_id_uuid, tag):
     """ Tool """
-    mongo.db.issues.update_one(
-        {"id": issue_id_uuid},
-        {
-            "$push": {
-                "tags": tag,
-            },
-        },
-    )
-
+    issue = Issue.query.filter_by(hash_id=issue_id_uuid).first()
+    Tag.create({'tag':tag, 'issue_id':issue.id})
 
 def set_state(issue_id_uuid, state, payload=None):
     """ Tool """
-    mongo.db.issues.update_one(
-        {"id": issue_id_uuid},
-        {
-            "$set": {
-                "state.value": state,
-                "state.payload": payload,
-            },
-        },
-    )
-
+    issue = Issue.query.filter_by(hash_id=issue_id_uuid)
+    issue.state['value'] = state
+    issue.state['payload'] = payload
+    db.session.commit()
 
 def reopen_issues(source_type, issue_ids: list):
     log.info(f"Re-opening issues - {issue_ids} - {source_type}")
-    mongo.db.issues.update_many(
-        {
-            "source.module": source_type,
-            "source.id": {
-                "$in": issue_ids
-            }
-        },
-        {
-            "$set": {
-                "status": "Open",
-                "state.value": "NEW_ISSUE",
-                "state.payload": None,
-            },
-        }
+    query = db.session.query(Issue).filter(
+        Issue.source_type==source_type,
+        Issue.source_id.in_(issue_ids)
     )
-
-
-def prepare_issue(payload: dict):
-    source_type = payload.pop('source_type', None)
-    issue_id = payload.pop('issue_id', None)
-    report_id = payload.pop("report_id", None)
-    engagement = payload.pop('engagement', None)
-    centry_project_id = payload.pop('centry_project_id', None)
-    data = {
-        "id": uuid.uuid4(),
-        "source": {
-            "module": source_type,
-            "id": issue_id,
-        },
-        "report_id": report_id,
-        "snapshot": payload,
-        "severity": payload.get("severity"),
-        "project": payload.get("project"),
-        "asset": payload.get("asset"),
-        "type": payload.get("type"),
-        "status": "Open",
-        "state": {
-            "value": "NEW_ISSUE",
-            "payload": None,
-        },
-        "tags": [],
-        "engagement": engagement,
-        "centry_project_id": centry_project_id,
-        "comments": [],
-        "attachments": [],
-        "jira": None,
-        "log": [],
+    state = {
+        'value': "NEW_ISSUE",
+        'payload': None,
     }
-    return data
-
-
-def insert_issue(payload) -> dict:
-    data = prepare_issue(payload)
-    mongo.db.issues.insert_one(data)
-    return data
-
+    query.update({
+        Issue.status: 'open',
+        Issue.state: state
+    })
+    db.session.commit()
 
 def create_jira_ticket(self, issue_data):
     #
@@ -163,8 +109,7 @@ def create_jira_ticket(self, issue_data):
     #
     set_state(item["id"], "TICKET_CREATED")
 
-
-def get_snapshot(module, source_type, issue_id, project_id=None):
+def get_snapshot(module, source_type, issue_id):
     snapshot_rpc = getattr(
         module.context.rpc_manager.call,
         f'{source_type}__get_issue_snapshot',
@@ -172,19 +117,65 @@ def get_snapshot(module, source_type, issue_id, project_id=None):
     snapshot = snapshot_rpc(issue_id)
     snapshot['source_type'] = source_type
     snapshot['issue_id'] = issue_id
-    snapshot['centry_project_id'] = project_id
     return snapshot
 
+def search_issue(source_id, source_type):
+    return db.session.query(
+            exists().where(
+                Issue.status=='open',
+                Issue.source_id==source_id,
+                Issue.source_type==source_type
+            )
+        ).scalar()
 
-def open_issue(snapshot):
-    insert_issue(snapshot)
+def parse_issue_payload(payload):
+    source_type = payload.pop('source_type', None)
+    issue_id = payload.pop('issue_id', None)
+    report_id = payload.pop("report_id", None)
+    engagement = payload.pop('engagement', None)
+    project_id = payload.pop('project_id', None)
+    data = {
+        "hash_id": str(uuid.uuid4()),
+        "source_type": source_type,
+        "source_id": issue_id,
+        "report_id": report_id,
+        "snapshot": payload,
+        "severity": payload.get("severity"),
+        "scan_project": payload.get("project"),
+        "asset": payload.get("asset"),
+        "type": payload.get("type"),
+        "status": "open",
+        "state": {
+            "value": "NEW_ISSUE",
+            "payload": None,
+        },
+        "engagement": engagement,
+        "project_id": project_id,
+    }
+    return data
 
+def _validate_issue(project_id, snapshot):
+    snapshot["project_id"] = project_id
+    payload = parse_issue_payload(snapshot)
+    issue = issue_schema.load(payload)
+    return issue
 
-def search_issue(hash_id):
-    result = mongo.db.issues.find(
-        {
-            'status': 'Open',
-            'source.id': hash_id
-        }
-    )
-    return bool(tuple(result))
+def validate_findings(project_id, findings):
+    return [_validate_issue(project_id, finding) for finding in findings]
+
+def open_issue(project_id, snapshot):
+    issue = _validate_issue(project_id, snapshot)
+    return Issue.create(issue)
+
+def create_finding_issues(issues):
+    new_issues = _sort_out_new_issues(issues)
+    db.session.bulk_save_objects(new_issues)
+    db.session.commit()
+    return new_issues
+
+def _sort_out_new_issues(issues) -> list:
+    return [
+        Issue(**issue)
+        for issue in issues
+        if not search_issue(issue['source_id'], issue['source_type']) 
+    ]

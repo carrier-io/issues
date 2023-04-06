@@ -16,36 +16,24 @@
 #   limitations under the License.
 
 """ API """
-import flask  # pylint: disable=E0401,W0611
+import flask
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401
 import flask_restful  # pylint: disable=E0401
-
-# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-from marshmallow.exceptions import ValidationError
-from ...tools.issues import create_finding_issues, validate_findings
-from ...tools.utils import make_list_response
-from ...serializers.issue import issues_schema
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
-    """
-    Finding endpoint
-    """
+    """ API Resource """
 
-    url_params = ['<int:project_id>']
+    url_params = ['<string:name>']
 
     def __init__(self, module):
         self.module = module
 
 
-    def post(self, project_id):  # pylint: disable=R0201
-        findings = flask.request.json
-        try:
-            issues = validate_findings(project_id, findings)
-        except ValidationError as e:
-            return {"ok": False, "error": "Validation error"}, 400
-        
-        return make_list_response(create_finding_issues, issues_schema, issues)
-
-
-
-
+    @auth.decorators.check_api(["global_admin"])
+    def get(self, name):
+        "Attachment download"
+        return flask.send_from_directory(
+            self.module.context.settings['application']["KANBAN_UPLOAD_FOLDER"], name
+        )

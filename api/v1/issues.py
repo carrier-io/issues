@@ -19,10 +19,12 @@
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
+from tools import api_tools
+from ...models.issues import Issue
+from ...serializers.issue import issues_schema, issue_schema
 from ...tools.issues import open_issue
-from tools import auth  # pylint: disable=E0401
-from tools import mongo  # pylint: disable=E0401
+from ...tools.utils import make_create_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -53,38 +55,23 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     # @auth.decorators.check_api(["orchestration_engineer"])
     def get(self, project_id):  # pylint: disable=R0201
-        result = list()
         args = dict(flask.request.args)
-        offset = args.pop("offset", 0)
-        limit = args.pop("limit", 0)
-        query = {
-            'centry_project_id': project_id,
-            **args
-        }
-        for item in mongo.db.issues.find(
-            filter=query,
-            skip=int(offset),
-            limit=int(limit),
-        ):
-            data = dict(item)
-            #
-            data.pop("_id")
-            data["id"] = str(data["id"])
-            #
-            result.append(data)
-        #
+        table_args = {}
+        for field in ("limit", "offset", "sort", "filter"):
+            if field in args:
+                table_args[field] = args.pop(field)
+    
+        total, res = api_tools.get(project_id, table_args, Issue, args)
         return {
-            "total": mongo.db.issues.count_documents(filter=query),
-            "rows": result,
+            "total": total,
+            "rows": issues_schema.dump(res),
         }
-
 
     def post(self, project_id):
-        payload = flask.request.json
-        payload['centry_project_id'] = project_id
-        try:
-            open_issue(self.module, payload)
-        except Exception as e:
-            return {"ok":False, "error": str(e)}, 400
-        return {"ok": True}, 201
-    
+        return make_create_response(
+            open_issue, 
+            issue_schema, 
+            project_id, 
+            flask.request.json
+        )
+        

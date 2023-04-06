@@ -19,8 +19,10 @@
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...tools.issues import open_issue
+from ...tools.utils import make_create_response
+from ...serializers.issue import issue_schema
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -33,8 +35,10 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    def post(self, project_id):  # pylint: disable=R0201
-        report = flask.request.json
-        report['centry_project_id'] = project_id
-        open_issue(report)
-        return {"ok": True}, 201
+    def post(self, project_id):
+        return make_create_response(
+            open_issue, 
+            issue_schema, 
+            project_id, 
+            flask.request.json
+        )

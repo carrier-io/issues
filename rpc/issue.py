@@ -16,11 +16,11 @@
 #   limitations under the License.
 
 """ RPC """
-import uuid
 from typing import List, Dict
-from pylon.core.tools import log  # pylint: disable=E0611,E0401
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
-from tools import rpc_tools, mongo  # pylint: disable=E0401
+from tools import rpc_tools, db # pylint: disable=E0401
+from ..models.issues import Issue
 
 
 
@@ -30,113 +30,48 @@ class RPC:  # pylint: disable=E1101,R0903
     @web.rpc("issues_get_issue", "get_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_issue(self, project_id, hash_id):
-        result = {"ok": True}
-        try:
-            resp = mongo.db.issues.find_one({
-                'id': uuid.UUID(hash_id),
-                'project_id': project_id,
-            }, {'_id':0})
-            log.info(resp)
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-        
-        if not resp:
-            return {"ok":False, "error": "Not Found"}
-
-        result['item'] =  resp
-        return result
-            
+        return Issue.get(project_id, hash_id)
 
     @web.rpc("issues_delete_issue", "delete_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _delete_issue(self, project_id, hash_id):
-        result = {'ok': True}
-        try:
-            resp = mongo.db.issues.delete_one({
-                "id": uuid.UUID(hash_id),
-                "project_id": project_id,
-            })
-        except Exception as e:
-            result['ok'] = False
-            result['error'] = str(e)
-            return result
-        
-        if resp.deleted_count == 0:
-            result['ok'] = False
-            result['error'] = 'Not Found'
-        return result 
+        return Issue.remove(project_id, hash_id)
 
     @web.rpc("issues_filter_present_issues", "filter_present_issues")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _filter_present_issues(self, source, ids):
-        issues = mongo.db.issues.find({
-            "source.module": source,
-            "source.id": {
-                "$in": ids
-                }
-            }, 
-            {"source.id": 1, "_id":0}
+    def _filter_present_issues(self, source, source_ids):
+        query = db.session.query(Issue)
+        query = query.filter(
+            Issue.source_id.in_(source_ids),
+            Issue.source_type == source,
         )
-        return [issue['source']['id'] for issue in issues]
-
+        issues = query.all()
+        return [issue.source_id for issue in issues]
 
     @web.rpc("issues_update_issue", "update_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _update_issue(self, project_id, id, payload):
-        issue = mongo.db.issues.find_one({"id": uuid.UUID(id)})
-        if not issue:
-            return {'ok':False, 'error': "Not found"}
-
-        query = {"$set": payload}
-        response = mongo.db.issues.update_one({"id": uuid.UUID(id)}, query)
-        modified = response.modified_count > 0
-        output = {'ok': True if modified else False}
-        
-        event_payload = {'project_id': project_id}
-        for key in payload.keys():
-            event_payload[key] = {
-                'old_value': get_attr(issue, key),
-                'new_value': payload[key],
-                'id': id,
-            }           
-        #
+    def _update_issue(self, project_id, hash_id, payload:dict):    
+        issue = Issue.get(project_id, hash_id)
+        event_data = get_event_data(project_id, hash_id, payload, issue)
+        issue.update_obj(payload)
         self.context.event_manager.fire_event(
-            'issues_updated_issue',
-            event_payload
+            'issues_updated_issue', 
+            event_data
         )
-        #
-        return output
+        return {"ok": True, "item": issue}
 
-    
     @web.rpc('issues_set_engagements', "set_engagements")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _set_engagements(self, ids: List[str], engagement_id: str):
-        ids = [uuid.UUID(id) for id in ids]
-        filter = {"id": {"$in": ids}}
-        query = {"$set": {"engagement": engagement_id}}
-        response = mongo.db.issues.update_many(filter, query)
-        modified = response.modified_count > 0
-        output = {"ok": True if modified else False}
-        return output
+        query = db.session.query(Issue).filter(Issue.hash_id.in_(ids))
+        query.update({Issue.engagement: engagement_id})
+        db.session.commit()
+        return {"ok": True}
     
-
     @web.rpc('issues_filter_issues', 'filter_issues')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _filter_issues(self, query: Dict[str, object]):
-        try:
-            result = mongo.db.issues.find(query)
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-        issues = []
-        for issue in result:
-            issue.pop('_id')
-            issue['id'] = str(issue['id'])
-            issues.append(issue)
-
-        return {"ok": True, "items": issues}
-
-
+        return Issue.query.filter_by(**query)
 
 
 # Utility functions
@@ -147,3 +82,14 @@ def get_attr(data, nested_key: str) -> str:
     for key in nested_key.split('.'):
         data = data[key]
     return data
+
+
+def get_event_data(project_id, hash_id, payload, obj: Issue):
+    event_payload = {'project_id': project_id}
+    for key in payload.keys():
+        event_payload[key] = {
+            'old_value': obj.get_field_value(key),
+            'new_value': payload[key],
+            'id': hash_id,
+        }
+    return event_payload
