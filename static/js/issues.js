@@ -1,4 +1,4 @@
-$("#modal-view").on("show.bs.modal", function (e) {
+$("#modal-view").on("show.bs.modal", (e) => {
   var row = $("#table").bootstrapTable("getRowByUniqueId", view_row_id);
   $("#form-view").get(0).reset();
   // $("#view-data").val(JSON.stringify(row));
@@ -40,24 +40,32 @@ function actionsFormatter(value, row, index) {
 }
 
 window.actionsEvents = {
-  "click .issue-view": function (e, value, row, index) {
-    $("#view-title").val(row.snapshot.title)
-    $("#view-description").val(row.snapshot.description)
-    $("#view-severity").val(row.severity)
-    $("#view-status").val(row.status)
-    $("#view-type").val(row.type)
-    $("#view-asset").val(row.asset)
-    $("#view-project").val(row.project)
-    $("#view-state").val(row.state.value)
-    $("#view-jira").val(row.jira)
-    $("#view-logs").val(row.log.toString())
-    $("#view-comments").val(row.comments.toString())
-    $("#view-tags").val(row.tags.toString())
+  "click .issue-view": async (e, value, row, index) => {
+    console.log(issue_detail_url)
+    try{
+      const resp = await axios.get(issue_detail_url+row.id)
+      data = resp.data['item']
+    }catch (error){
+      console.log(error)
+    }
+    console.log(data['snapshot']['title'])
+    $("#view-title").val(data['snapshot']['title'])
+    $("#view-description").val(data['snapshot']['description'])
+    $("#view-severity").val(data['severity'])
+    $("#view-status").val(data['status'])
+    $("#view-type").val(data['type'])
+    $("#view-asset").val(data['asset'])
+    $("#view-project").val(data['project'])
+    $("#view-state").val(data['state']['value'])
+    $("#view-jira").val(data['jira'])
+    $("#view-logs").val(data['logs'].toString())
+    $("#view-tags").val(data['tags'].toString())
+    // $("#view-comments").val(data['comments'].toString())
     $("#modal-view").modal("show");
   },
   
   "click .issue-delete": function (e, value, row, index) {
-    axios.delete(issue_detail_url + "/" + row.id)
+    axios.delete(issue_detail_url + row.hash_id)
       .then(function () {
         $("#table").bootstrapTable("remove", {
           field: "id",
@@ -72,7 +80,7 @@ window.actionsEvents = {
   
   "click .issue-edit": function (e, value, row, index) {
     $("#modal-edit").modal("show");
-    $("#edit").attr('issue-id', row.id)
+    $("#edit").attr('issue-id', row.hash_id)
     $.each($("form#form-edit .form-control"), (ind, tag)  => {
       tag.value = getNestedValue(tag.name, row)
     })
@@ -121,14 +129,13 @@ $(document).on('vue_init', () => {
     $.each($("form#form-edit .form-control"),  (ind, tag)  => {
       data[tag.name] = tag.value
     })
-    data['severity'] = $("#input-severity").val()
-    data['snapshot.severity'] = $("#input-severity").val()
+    data['severity'] = $("#edit-severity").val()
+    data['snapshot.severity'] = $("#edit-severity").val()
     data['asset'] = data['snapshot.asset']
-    data['project'] = data['snapshot.project']
-    
+    data['scan_project'] = data['snapshot.project']
     id =  $("#edit").attr('issue-id')
-    axios.put(issue_detail_url+'/' + id, data)
-    .then(resp => {
+    axios.put(issue_detail_url + id, data)
+    .then(() => {
       showNotify("SUCCESS", "Successfully updated")
       $("#modal-edit").modal('hide')
       $("#table").bootstrapTable("refresh", {});

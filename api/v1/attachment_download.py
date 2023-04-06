@@ -16,30 +16,24 @@
 #   limitations under the License.
 
 """ API """
-import flask  # pylint: disable=E0401,W0611
+import flask
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401
 import flask_restful  # pylint: disable=E0401
-
-# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-from ...tools.issues import open_issue
 from tools import auth  # pylint: disable=E0401
-from ...tools.utils import make_create_response
-from ...serializers.issue import issue_schema
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
-    """
-    Finding endpoint
-    """
+    """ API Resource """
 
-    url_params = ['<int:project_id>']
+    url_params = ['<string:name>']
 
     def __init__(self, module):
         self.module = module
 
-    def post(self, project_id):
-        return make_create_response(
-            open_issue, 
-            issue_schema, 
-            project_id, 
-            flask.request.json
+
+    @auth.decorators.check_api(["global_admin"])
+    def get(self, name):
+        "Attachment download"
+        return flask.send_from_directory(
+            self.module.context.settings['application']["KANBAN_UPLOAD_FOLDER"], name
         )

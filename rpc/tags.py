@@ -18,28 +18,19 @@
 """ RPC """
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools
-from ..models.events import Event
+from ..models.tags import Tag, Log
 
 
 class RPC:  # pylint: disable=E1101,R0903
     """ RPC Resource """
 
-    @web.rpc("issues_insert_events", "insert_events")
+    @web.rpc("issues_get_tags", "get_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _insert_events(self, data):
-        return Event.create(data)
+    def _get_tags(self, issue_id):
+        return Tag.query.filter_by(issue_id=issue_id).all()
 
-    @web.rpc("issues_list_events", "list_events")
+    
+    @web.rpc("issues_get_logs", "get_logs")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _list_events(self, project_id):
-        return Event.list(project_id)
-
-    @web.rpc("issues_update_event", "update_event")
-    @rpc_tools.wrap_exceptions(RuntimeError)
-    def _update_event(self, project_id, id, payload):
-        return Event.update(project_id, id, payload)
-
-    @web.rpc("issues_delete_event", "delete_event")
-    @rpc_tools.wrap_exceptions(RuntimeError)
-    def _delete_event(self, project_id, id):
-        Event.remove(project_id, id)
+    def _get_logs(self, issue_id):
+        return Log.query.filter_by(issue_id=issue_id).all()

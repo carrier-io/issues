@@ -19,11 +19,11 @@
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-
-from tools import auth  # pylint: disable=E0401
-from tools import mongo  # pylint: disable=E0401
-from ...tools.issues import open_issue, search_issue
+# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
+from marshmallow.exceptions import ValidationError
+from ...tools.issues import create_finding_issues, validate_findings
+from ...tools.utils import make_list_response
+from ...serializers.issue import issues_schema
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -39,10 +39,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     @auth.decorators.check_api(["orchestration.issues.issues.create"])
     def post(self, project_id):  # pylint: disable=R0201
         findings = flask.request.json
-        for finding in findings:
-            finding['centry_project_id'] = project_id
-            if not search_issue(finding['issue_id']):
-                open_issue(finding)
-        return {"ok": True}, 201
+        try:
+            issues = validate_findings(project_id, findings)
+        except ValidationError as e:
+            return {"ok": False, "error": "Validation error"}, 400
+        
+        return make_list_response(create_finding_issues, issues_schema, issues)
+
+
 
 

@@ -22,23 +22,25 @@ import flask_restful  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 
 from tools import auth  # pylint: disable=E0401
+from ...serializers.issue import issue_schema
+from ...tools.utils import make_delete_response, make_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
     """ API Resource """
 
-    url_params = ['<int:project_id>/<string:hash_id>']
+    url_params = [
+        '<int:project_id>/<string:id>',
+        '<int:project_id>/<int:id>',
+    ]
 
     def __init__(self, module):
         self.module = module
 
     @auth.decorators.check_api(["orchestration.issues.issues.view"])
-    def get(self, project_id, hash_id):
-        result = self.module.get_issue(project_id, hash_id)
-        if not result['ok']:
-            return result, 400
-        result['item']['id'] = str(result['item']['id'])
-        return result, 200
+    def get(self, project_id, id):
+        fn = self.module.get_issue
+        return make_response(fn, issue_schema, project_id, id)
 
     @auth.decorators.check_api({
         "permissions": ["orchestration.issues.issues.edit"],
@@ -47,10 +49,10 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             "default": {"admin": True, "viewer": False, "editor": True},
             "developer": {"admin": True, "viewer": False, "editor": True},
         }})
-    def put(self, project_id, hash_id):
+    def put(self, project_id, id):
         payload = flask.request.json
-        data = self.module.update_issue(project_id, hash_id, payload)
-        return data, 200
+        fn = self.module.update_issue
+        return make_response(fn, issue_schema, project_id, id, payload)
     
     @auth.decorators.check_api({
         "permissions": ["orchestration.issues.issues.delete"],
@@ -59,8 +61,9 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             "default": {"admin": True, "viewer": False, "editor": False},
             "developer": {"admin": True, "viewer": False, "editor": False},
         }})
-    def delete(self, project_id, hash_id):
-        result = self.module.delete_issue(project_id, hash_id)
-        status_code = 200 if result['ok'] else 400
-        return result, status_code
+    def delete(self, project_id, id):
+        fn = self.module.delete_issue
+        return make_delete_response(fn, project_id, id)
+
+  
 

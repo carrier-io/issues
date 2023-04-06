@@ -21,6 +21,11 @@ import flask_restful  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from tools import auth  # pylint: disable=E0401
 from plugins.issues.serializers.event import EventModel
+from plugins.issues.serializers.event import event_schema, events_schema
+from ...tools.utils import (
+    make_list_response,
+    make_create_response,
+)
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -30,8 +35,6 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    def _handle_ids(self, event: dict):
-        event['id'] = str(event.pop('_id'))
 
     @auth.decorators.check_api({
         "permissions": ["orchestration.issues.events.view"],
@@ -41,10 +44,8 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             "developer": {"admin": True, "viewer": True, "editor": True},
         }})
     def get(self, project_id):  # pylint: disable=R0201
-        events = self.module.list_events(project_id)
-        for event in events:
-            self._handle_ids(event)
-        return {"ok":True, "items":events}, 200
+        fn = self.module.list_events
+        return make_list_response(fn, events_schema, project_id)
 
     @auth.decorators.check_api({
         "permissions": ["orchestration.issues.events.create"],
@@ -60,8 +61,5 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         except Exception as e:
             return {"ok":False, 'error':str(e)}, 400
         
-        result = self.module.insert_events(event.dict())
-        if not result['ok']:
-            return result, 400
-        self._handle_ids(result['item'])
-        return result, 200
+        fn = self.module.insert_events
+        return make_create_response(fn, event_schema, event.dict())
