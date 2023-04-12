@@ -20,8 +20,8 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
 # from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-from ...tools.issues import open_issue
-from ...tools.utils import make_create_response
+from ...utils.issues import open_issue
+from ...utils.utils import make_create_response
 from ...serializers.issue import issue_schema
 
 

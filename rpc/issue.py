@@ -16,11 +16,15 @@
 #   limitations under the License.
 
 """ RPC """
+import json
+import operator
+from sqlalchemy import and_, or_
 from typing import List, Dict
-# from pylon.core.tools import log  # pylint: disable=E0611,E0401
+from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db # pylint: disable=E0401
-from ..models.issues import Issue
+from ..models.issues import Issue, issues_tags
+from ..models.tags import Tag
 
 
 
@@ -70,8 +74,53 @@ class RPC:  # pylint: disable=E1101,R0903
     
     @web.rpc('issues_filter_issues', 'filter_issues')
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _filter_issues(self, query: Dict[str, object]):
-        return Issue.query.filter_by(**query)
+    def _filter_issues(self, project_id, flask_args):
+        args = dict(flask_args)
+        limit = args.pop('limit', 10)
+        offset = args.pop('offset', 0)
+        search = args.pop('search', None)
+        sort = args.pop('sort', None)
+        order = args.pop('order', None)
+        multiselect_filters = ('severity', 'type', 'status', 'source')
+
+        query = db.session.query(Issue).filter(Issue.project_id==project_id)
+        for filter_ in multiselect_filters:
+            values = flask_args.getlist(filter_)
+            if values:
+                del args[filter_]
+                query = query.filter(and_(
+                    getattr(Issue, filter_).in_(values)
+                ))
+        
+        tags = flask_args.getlist('tags')
+        if tags:
+            tags = [int(x) for x in tags]
+            query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+            del args['tags']
+        
+        if search:
+            query = query.filter(or_(
+                Issue.title.like(f'%{search}%'),
+                Issue.description.like(f'%{search}%'),
+                Issue.type.like(f'%{search}%'),
+                Issue.source_type.like(f'%{search}%'),
+                Issue.status==search,
+                Issue.severity==search,
+            ))
+
+        filter_ = list()
+        for key, value in args.items():
+            filter_.append(operator.eq(getattr(Issue, key), value))
+        filter_ = and_(*tuple(filter_))
+
+        query = query.filter(filter_)
+        total = query.count()
+
+        if limit:
+            query = query.limit(limit)
+        if offset:
+            query = query.offset(offset)
+        return total, query.all() 
 
 
 # Utility functions

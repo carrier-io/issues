@@ -20,7 +20,7 @@ from jira import JIRA  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import db, minio_client  # pylint: disable=E0401
-from ..tools.issues import (
+from ..utils.issues import (
     open_issue,
     reopen_issues,
     add_log_line,
@@ -96,24 +96,6 @@ class Event:  # pylint: disable=E1101,R0903
         issue.state['value'] = "CLOSED_ISSUE"
         issue.state['payload'] = None
         db.session.commit()
-        #
-        # item = mongo.db.issues.find_one({
-        #     "source.module": payload["source"],
-        #     "source.id": payload["id"],
-        # })
-        # if item.get["jira"] != None:
-        #     jira_client = JIRA(
-        #         self.descriptor.config.get("jira_url")[item["jira"]["server"]],
-        #         basic_auth=(
-        #             self.descriptor.config.get("jira_login"),
-        #             self.descriptor.config.get("jira_password")
-        #         )
-        #     )
-        #     jira_client.transition_issue(
-        #         item["jira"]["ticket"], "Close",
-        #         comment="Closing: item is no longer present",
-        #         resolution={"name": "Obsolete"}
-        #     )
 
     @web.event("issues_enagegement_deleted")
     def engagement_deleted(self, context, event, payload):
@@ -160,3 +142,27 @@ class Event:  # pylint: disable=E1101,R0903
                     "new_value": change_meta.get('new_value'),
                     "id": change_meta.get('id') 
                 })
+
+
+
+
+
+
+#
+# item = mongo.db.issues.find_one({
+#     "source.module": payload["source"],
+#     "source.id": payload["id"],
+# })
+# if item.get["jira"] != None:
+#     jira_client = JIRA(
+#         self.descriptor.config.get("jira_url")[item["jira"]["server"]],
+#         basic_auth=(
+#             self.descriptor.config.get("jira_login"),
+#             self.descriptor.config.get("jira_password")
+#         )
+#     )
+#     jira_client.transition_issue(
+#         item["jira"]["ticket"], "Close",
+#         comment="Closing: item is no longer present",
+#         resolution={"name": "Obsolete"}
+#     )

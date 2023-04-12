@@ -23,7 +23,7 @@ from pylon.core.tools import log  # pylint: disable=E0611,E0401
 
 from tools import auth  # pylint: disable=E0401
 from ...serializers.issue import issue_schema
-from ...tools.utils import make_delete_response, make_response
+from ...utils.utils import make_delete_response, make_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903

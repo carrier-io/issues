@@ -16,15 +16,16 @@
 #   limitations under the License.
 
 """ API """
+import json
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
-# from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
+from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from tools import api_tools
 from ...models.issues import Issue
 from ...serializers.issue import issues_schema, issue_schema
-from ...tools.issues import open_issue
-from ...tools.utils import make_create_response
+from ...utils.issues import open_issue
+from ...utils.utils import make_create_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -55,16 +56,11 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     # @auth.decorators.check_api(["orchestration_engineer"])
     def get(self, project_id):  # pylint: disable=R0201
-        args = dict(flask.request.args)
-        table_args = {}
-        for field in ("limit", "offset", "sort", "filter"):
-            if field in args:
-                table_args[field] = args.pop(field)
-    
-        total, res = api_tools.get(project_id, table_args, Issue, args)
+        args = flask.request.args
+        total, resp = self.module.filter_issues(project_id, args)
         return {
             "total": total,
-            "rows": issues_schema.dump(res),
+            "rows": issues_schema.dump(resp),
         }
 
     def post(self, project_id):

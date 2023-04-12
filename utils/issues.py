@@ -1,10 +1,9 @@
 import uuid
-from copy import copy
 from jira import JIRA  # pylint: disable=E0401
-from tools import mongo  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from ..models.issues import Issue
-from ..models.tags import Tag, Log
+from ..models.tags import Tag
+from ..models import Log
 from ..serializers.issue import issue_schema
 from tools import db
 from sqlalchemy.sql import exists
@@ -18,10 +17,23 @@ def add_log_line(source_id, source_type, log_line):
     ).first()
     Log.create({'log':log_line, 'issue_id':issue.id})
 
+def add_issue_log_line(issue, log_line):
+    Log.create({'log': log_line, 'issue_id': issue.id})
+
 def add_tag(issue_id_uuid, tag):
     """ Tool """
     issue = Issue.query.filter_by(hash_id=issue_id_uuid).first()
     Tag.create({'tag':tag, 'issue_id':issue.id})
+
+def add_issue_tag_line(issue, tag_name, commit=False):
+    tag = Tag.query.filter_by(tag=tag_name).first()
+    if not tag:
+        tag = Tag.create({'tag': tag_name})
+    
+    issue.tags.append(tag)
+    if commit:
+        Issue.commit()
+
 
 def set_state(issue_id_uuid, state, payload=None):
     """ Tool """
@@ -128,14 +140,25 @@ def search_issue(source_id, source_type):
             )
         ).scalar()
 
+
+def stringify_description(description):
+    if not type(description) == str:
+        return '\n'.join(description)
+    return description
+
 def parse_issue_payload(payload):
-    source_type = payload.pop('source_type', None)
-    issue_id = payload.pop('issue_id', None)
-    report_id = payload.pop("report_id", None)
-    engagement = payload.pop('engagement', None)
-    project_id = payload.pop('project_id', None)
+    source_type = payload.get('source_type')
+    issue_id = payload.get('issue_id')
+    report_id = payload.get("report_id")
+    engagement = payload.get('engagement')
+    project_id = payload.get('project_id')
+    title = payload.get('title')
+    description = payload.get('description')
+    description = stringify_description(description)
     data = {
         "hash_id": str(uuid.uuid4()),
+        "title": title,
+        "description": description,
         "source_type": source_type,
         "source_id": issue_id,
         "report_id": report_id,
@@ -165,7 +188,11 @@ def validate_findings(project_id, findings):
 
 def open_issue(project_id, snapshot):
     issue = _validate_issue(project_id, snapshot)
-    return Issue.create(issue)
+    issue = Issue.create(issue)
+    for tag in snapshot.get('tags', []):
+        add_issue_tag_line(issue, tag)
+    db.session.commit()
+    return issue
 
 def create_finding_issues(issues):
     new_issues = _sort_out_new_issues(issues)

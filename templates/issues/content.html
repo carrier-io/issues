@@ -1,10 +1,10 @@
-<div id="content">
+  <!-- <div id="content">
   <div class="container-fluid">
     <div class="card card-table-sm mt-3">
       <div class="card-header">
         <div class="row">
           <div class="col-4">
-              <h4>Issues</h4>
+              <h4>Tickets</h4>
           </div>
           <div class="col-8">
             <div class="d-flex justify-content-end">
@@ -46,7 +46,12 @@
         </div>
       </div>
   </div>
-</div>
+  </div>   -->
+
+<tickets
+  @register="register"
+  instance_name="tickets"
+></tickets>
 
 
 {% include "issues:issues/modal_view.html" %}

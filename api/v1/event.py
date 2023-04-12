@@ -23,7 +23,7 @@ from pydantic import ValidationError
 from plugins.issues.serializers.event import EventModel
 from ...serializers.event import event_schema
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
-from ...tools.utils import make_response, make_delete_response
+from ...utils.utils import make_response, make_delete_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903

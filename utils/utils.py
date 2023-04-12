@@ -1,6 +1,7 @@
 from sqlalchemy.orm.exc import NoResultFound
-from pylon.core.tools import log
+# from pylon.core.tools import log
 from uuid import uuid4
+from pylon.core.tools import log
 
 
 def make_unique_filename(name):
@@ -14,6 +15,7 @@ def _wrap_exceptions(fn):
     except NoResultFound:
         return {"ok": False, "error": "Issue is not found"}, 404
     except Exception as e:
+        log.info(e)
         return {"ok": False, "error": str(e)}, 400        
 
 

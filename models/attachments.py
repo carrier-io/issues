@@ -9,6 +9,6 @@ class Attachment(db_tools.AbstractBaseMixin, TimestampModelMixin, db.Base):
     
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, nullable=False)
-    issue_id = Column(Integer, ForeignKey(Issue.id))
+    issue_id = Column(Integer, ForeignKey(Issue.id, ondelete='CASCADE'))
     file_name = Column(String(300), nullable=False)
     url = Column(String(256), nullable=False, unique=True)

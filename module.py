@@ -22,7 +22,7 @@ from pylon.core.tools import log  # pylint: disable=E0401
 from pylon.core.tools import module  # pylint: disable=E0401
 
 from tools import theme  # pylint: disable=E0401
-from .tools.db import init_db
+from .utils.db import init_db
 
 
 class Module(module.ModuleModel):
@@ -38,9 +38,9 @@ class Module(module.ModuleModel):
         init_db()
         # Theme registration
         theme.register_subsection(
-            "orch_tool",
-            "table", "Issues",
-            title="Issues",
+            "engagements",
+            "table", "Tickets",
+            title="Tickets",
             kind="slot",
             prefix="issues_table_slot_",
             icon_class="fas fa-server fa-fw",

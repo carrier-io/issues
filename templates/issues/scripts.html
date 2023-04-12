@@ -1,11 +1,19 @@
 <script src="{{ url_for('issues.static', filename='js/vendor/bootstrap-table.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/jquery.serialize-object.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/axios.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <script>
+  var engagements_list = "{{ url_for('api.v1.engagements.engagements', project_id=project_id) }}"
   var issues_api_url = "{{url_for('api.v1.issues.issues', project_id=project_id)}}";
   var issue_detail_url = "{{url_for('api.v1.issues.issue', project_id=project_id, id='1').rstrip('1')}}"
+  var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
   var view_row_id = "";
 </script>
 
+<script src="{{ url_for('issues.static', filename='js/filter-component.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/Sidebar.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/issues_table.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/issues.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/Issues.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/upload-template.js') }}"></script>
