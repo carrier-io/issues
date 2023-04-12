@@ -18,7 +18,8 @@
 """ RPC """
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools
-from ..models.tags import Tag, Log
+from ..models.tags import Tag
+from ..models.logs import Log
 
 
 class RPC:  # pylint: disable=E1101,R0903

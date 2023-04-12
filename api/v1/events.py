@@ -18,11 +18,10 @@
 """ API """
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
-from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from tools import auth  # pylint: disable=E0401
 from plugins.issues.serializers.event import EventModel
 from plugins.issues.serializers.event import event_schema, events_schema
-from ...tools.utils import (
+from ...utils.utils import (
     make_list_response,
     make_create_response,
 )

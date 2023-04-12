@@ -18,7 +18,7 @@
 """ API """
 from flask import request, url_for
 from werkzeug.utils import secure_filename
-from plugins.issues.tools.utils import make_unique_filename
+from plugins.issues.utils.utils import make_unique_filename
 import flask_restful  # pylint: disable=E0401
 # from pylon.core.tools import log  # pylint: disable=E0611,E0401
 
