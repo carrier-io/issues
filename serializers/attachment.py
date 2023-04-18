@@ -14,12 +14,14 @@ class AttachmentSchema(ma.SQLAlchemyAutoSchema):
             'file_name',
             'url',
             'created_at',
+            'project_id',
         )
         dump_only = (
             'id',
             'url',
             'updated_at',
             'created_at',
+            'project_id',
         )
 
 

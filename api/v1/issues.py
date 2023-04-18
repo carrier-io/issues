@@ -25,7 +25,7 @@ from tools import api_tools
 from ...models.issues import Issue
 from ...serializers.issue import issues_schema, issue_schema
 from ...utils.issues import open_issue
-from ...utils.utils import make_create_response
+from ...utils.utils import make_create_response, make_delete_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -53,11 +53,19 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     def __init__(self, module):
         self.module = module
+        self.rpc = module.context.rpc_manager.call
 
-    # @auth.decorators.check_api(["orchestration_engineer"])
     def get(self, project_id):  # pylint: disable=R0201
         args = flask.request.args
         total, resp = self.module.filter_issues(project_id, args)
+        
+        # engagement hash_ids mapping to engagement names
+        if not args.get('engagement'):
+            hash_ids = (issue.engagement for issue in resp)
+            names = self.rpc.engagement_get_engagement_names(hash_ids)
+            for issue in resp:
+                issue.engagement = names.get(issue.engagement, issue.engagement)
+        
         return {
             "total": total,
             "rows": issues_schema.dump(resp),
@@ -70,4 +78,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             project_id, 
             flask.request.json
         )
+    
+    def delete(self, project_id):
+        ids = flask.request.args.getlist('id[]')
+        fn = self.module.bulk_delete_issues
+        return make_delete_response(
+            fn,
+            project_id,
+            ids
+        )
         
+

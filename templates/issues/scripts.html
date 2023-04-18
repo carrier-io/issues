@@ -4,6 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <script>
+  var boards_url = "{{ url_for('api.v1.kanban.boards', project_id=project_id)}}"
   var engagements_list = "{{ url_for('api.v1.engagements.engagements', project_id=project_id) }}"
   var issues_api_url = "{{url_for('api.v1.issues.issues', project_id=project_id)}}";
   var issue_detail_url = "{{url_for('api.v1.issues.issue', project_id=project_id, id='1').rstrip('1')}}"
@@ -12,6 +13,10 @@
 </script>
 
 <script src="{{ url_for('issues.static', filename='js/filter-component.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/board.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/engagement_card.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/engagement_creation_modal.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticket_creation_modal.js')}}"></script>
 <script src="{{ url_for('issues.static', filename='js/Sidebar.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/issues_table.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/issues.js') }}"></script>
