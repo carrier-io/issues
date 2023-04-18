@@ -2,6 +2,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # from pylon.core.tools import log
 from uuid import uuid4
 from pylon.core.tools import log
+from tools import db 
 
 
 def make_unique_filename(name):
@@ -15,7 +16,8 @@ def _wrap_exceptions(fn):
     except NoResultFound:
         return {"ok": False, "error": "Issue is not found"}, 404
     except Exception as e:
-        log.info(e)
+        log.error(e)
+        db.session.rollback()
         return {"ok": False, "error": str(e)}, 400        
 
 
@@ -52,3 +54,11 @@ def make_create_response(fn, schema, *args, **kwargs):
         result = {"ok": True, "item": schema.dump(item)}
         return result, status_code
     return _wrap_exceptions(run)
+
+
+def delete_attachments_from_minio(module, attachment):
+    log.info(attachment)
+    module.context.event_manager.fire_event(
+        'issues_attachment_deleted', 
+        {'attachment': attachment}
+    )

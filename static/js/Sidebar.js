@@ -1,63 +1,51 @@
 
 const EngagementsListAside = {
     props: ['selectedEngagementRowIndex', 'selectedEngagement', 'engagementCount'],
+    emits: ['engagementAdded'],
     data() {
         return {
-            canSelectItems: false,
+            currentEngIndex: null,
         }
+    },
+    components: {
+        'engagement-creation-modal': EngagementCreationModal,
     },
     computed: {
         responsiveTableHeight() {
             return `${(window.innerHeight - 286)}px`;
         }
     },
-    async mounted(){
-        console.log(issues_api_url)
-    },
     methods: {
-        switchSelectItems() {
-            this.canSelectItems = !this.canSelectItems;
-            const action = this.canSelectItems ? 'showColumn' : 'hideColumn';
-            $('#engagement-table').bootstrapTable(action, 'select');
-            document.getElementById("engagement-table")
-                .rows[this.selectedBucketRowIndex + 1]
-                .classList.add('highlight');
-        },
-        setEngagementEvents() {
-            const vm = this;
-            $('#engagement-table').on('sort.bs.table', function () {
-                vm.$nextTick(() => {
-                    $('#engagement-table').find(`[data-uniqueid='${vm.selectedEngagement.id}']`).addClass('highlight');
-                })
-            });
+        addedHandler(){
+            this.$emit('engagementAdded')
         },
     },
     template: `
         <aside class="m-3 card card-table-sm" style="width: 340px">
-            <div class="row p-4">
+            <div class="row px-4 pt-4">
                 <div class="col-8">
                     <h4>Engagements</h4>
                 </div>
                 <div class="col-4">
                     <div class="d-flex justify-content-end">
-                        <button type="button"
-                             data-toggle="modal" 
-                             data-target="#CreateEngModal"
-                             class="btn btn-secondary btn-sm btn-icon__sm">
-                            <i class="fas fa-plus"></i>
-                        </button>
+                        <engagement-creation-modal
+                            @added="addedHandler"
+                        >
+                        </engagement-creation-modal>
                     </div>
                 </div>
             </div>
+            <hr class="hr mb-0" />
             <div class="card-body" style="padding-top: 0">
                 <table class="table table-borderless table-fix-thead"
                     id="engagement-table"
                     data-toggle="table"
+                    data-show-header="false"
                     data-unique-id="id">
                     <thead class="thead-light bg-transparent">
                         <tr>
                             <th data-visible="false" data-field="id">index</th>
-                            <th data-sortable="true" data-field="name" class="engagement-name">NAME</th>
+                            <th data-formatter="nameFormatter" data-field="name" class="engagement-name">NAME</th>
                         </tr>
                     </thead>
                     <tbody :style="{'height': responsiveTableHeight}">
@@ -69,4 +57,13 @@ const EngagementsListAside = {
             </div>
         </aside>
     `
+}
+
+function nameFormatter(value, row){
+    allEngagement = row['id'] == -1
+    if(allEngagement){
+        return value
+    }
+    txt = `<div class="pl-2"><img class="mr-2" src="/issues/static/ico/circle.svg">${value}</div>`
+    return txt
 }

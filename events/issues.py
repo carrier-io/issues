@@ -36,11 +36,11 @@ class Event:  # pylint: disable=E1101,R0903
     """
 
     @web.event("issues_attachment_deleted")
-    def _issues_added_issue(self, context, event, payload):
+    def _issues_attachment_deleted(self, context, event, payload):
         attachment = payload['attachment']
-        filename = attachment.url.split('/')[-1]
-        bucket = attachment.url.split('/')[-2]
-        project_id = attachment.project_id
+        filename = attachment['url'].split('/')[-1]
+        bucket = attachment['url'].split('/')[-2]
+        project_id = attachment['project_id']
         project = context.rpc_manager.call.project_get_or_404(project_id=project_id)
         client = minio_client.MinioClient(project)
         client.remove_file(bucket, filename)

@@ -7,9 +7,7 @@ const RemovableFilter = {
             default: ''
         },
         itemsList:{
-            default: [...Array(5).keys()].map((item, index) => (
-                { id: Math.round(Math.random() * 1000), title: `Step ${index + 1}`}
-            ))
+            default: []
         },
         label:{
             default: 'LABEL'
@@ -50,7 +48,7 @@ const RemovableFilter = {
     methods: {
         handleRemove(){
             this.selectedItems = []
-            this.$emit('filterRemoved', this.label.toLowerCase())
+            this.$emit('filterRemoved', this.filter_name)
         },
         handleApply(){
             this.$emit("apply", this.filter_name, this.selectedItems)
@@ -130,3 +128,345 @@ const RemovableFilter = {
 
 register_component('removable-filter', RemovableFilter)
 
+
+const FilterToolbarContainer = {
+    props: {
+        pre_filter_map: {
+            default: {}
+        },
+        table_id: {
+            type: [String],
+            default:""
+        },
+        list_items: {
+            type: [Array, String],
+            default: []
+        },
+        pre_selected_indexes: {
+            type: [Array, String],
+            default: []
+        },
+        placeholder: {
+            type: String,
+            default: undefined
+        },
+        delimiter: {
+            type: String,
+            default: ','
+        },
+        container_class: {
+            type: String,
+            default: ''
+        },
+        button_class: {
+            type: String,
+            default: 'btn btn-select dropdown-toggle d-inline-flex align-items-center'
+        },
+        variant: {
+            type: String,
+            default: 'with_selected',
+            validator(value) {
+                // The value must match one of these strings
+                return ['with_selected', 'slot'].includes(value)
+            }
+        },
+        return_key: {
+            type: [String, null],
+            default: 'name',
+        },
+    },
+    emits: ['applyFilter'],
+    delimiters: ['[[', ']]'],
+    data() {
+        return {
+            selected_filters: [],
+            types_options:[],
+            source_options: [],
+            tags_options: [],
+            filterMap: {},
+        }
+    },
+    mounted() {
+        if (this.list_items.length > 0) {
+            if (typeof this.pre_selected_indexes === 'string') {
+                this.selected_filters = this.pre_selected_indexes.split(this.delimiter)
+            } else {
+                this.selected_filters = this.pre_selected_indexes
+            }
+        }
+        $(this.table_id).on('load-success.bs.table', async (data) => {
+            await this.fetchOptions()
+        })
+    },
+    watch:{
+        pre_filter_map:{
+            deep: true,
+            handler(value){
+                this.filterMap = Object.assign(value)
+                this.$emit('applyFilter', this.queryUrl)
+            }
+        }
+    },
+    computed: {
+        li() {
+            if (this.list_items.length > 0) {
+                let listed_items
+                if (typeof this.list_items === 'string') {
+                    listed_items = this.list_items.split(this.delimiter)
+                } else {
+                    listed_items = this.list_items
+                }
+                return listed_items.map((i, index) => {
+                    if (typeof i === 'object') {
+                        return {
+                            ...i,
+                            name: i.name,
+                            idx: index,
+                        }
+                    }
+                    return {
+                        name: i,
+                        idx: index
+                    }
+                })
+            }
+            return []
+        },
+
+        queryUrl(){
+            params = Object.keys(this.filterMap).map(key => {
+                value = this.filterMap[key]
+                if (Array.isArray(value)){
+                    return value.map(
+                        item => `${key}=${encodeURIComponent(item)}`
+                    ).join('&')
+                }
+                return key + "=" + encodeURIComponent(value)
+            }).join('&')
+            querySign = params ? "?" : ""
+            return issues_api_url + querySign + params
+        },
+
+        canFetchOptions(){
+            return (
+                Object.keys(this.filterMap).length == 1 
+                && 'engagement' in Object.keys(this.filterMap)
+            ) || (Object.keys(this.filterMap).length == 0)
+        },
+    },
+    methods: {
+        applyFilter(filter, values){
+            values = values.map(value => value['id'])
+            this.filterMap[filter] = values
+            this.$emit('applyFilter', this.queryUrl)
+        },
+
+        getTagsOptions(issues){
+            optsSet = new Set()
+            options = []
+            issues.forEach(issue => {
+                tags = issue['tags']
+                tags.forEach(tag => {
+                    if (!optsSet.has(tag.id)){
+                        optsSet.add(tag.id)
+                        options.push({
+                            id: tag.id, 
+                            title: tag.tag
+                        })
+                    }
+                })
+            })
+            return options
+        },
+
+        toCapilizedCase(str){
+            return str.charAt(0).toUpperCase() + str.slice(1)
+        },
+
+        getFilterOptions(issues, field){
+            optsSet = new Set()
+            options = []
+            issues.forEach(issue => {
+                value = issue[field]
+                if (value){
+                    if (!optsSet.has(value)){
+                        optsSet.add(value)
+                        options.push({
+                            id: issue[field], 
+                            title: this.toCapilizedCase(value)
+                        })
+                    }
+                }
+            })
+            return options
+        },
+
+        async getTableData(){    
+            const response = await axios.get(issues_api_url)
+            return response.data['rows']
+        },
+
+        async fetchOptions(){
+            if (!this.canFetchOptions){
+                return
+            }
+            data = await this.getTableData()
+            this.types_options = this.getFilterOptions(data, 'type')
+            this.source_options = this.getFilterOptions(data, 'source_type')
+            this.tags_options = this.getTagsOptions(data)
+        },
+
+        removeFilter(item){
+            delete this.filterMap[item]
+            index = this.selected_filters.indexOf(item)
+            this.selected_filters.splice(index, 1)
+            this.$emit('applyFilter', this.queryUrl)
+        },
+
+        searchChangeHandler(e){
+            value = e.target.value
+            if (value){
+                this.filterMap['search'] = value 
+            } else {
+                delete this.filterMap['search']
+            }
+            this.$emit('applyFilter', this.queryUrl, false)
+        },
+
+    },
+    template: `
+    <div class="row px-4 pt-4">
+        <div class="col-4">
+            <slot name="title"></slot>   
+        </div>
+        <div class="col-8">
+            <div class="d-flex justify-content-end">
+                
+                <div class="custom-input custom-input_search__sm mr-2 position-relative">
+                    <input
+                        id="search-bar"
+                        type="text"
+                        @input="searchChangeHandler"
+                        placeholder="Search">
+                        <img src="/issues/static/ico/search.svg" class="icon-search position-absolute">
+                </div>
+                
+                <div class="mr-2 ">
+                    <div class="dropdown_simple-list" 
+                        :class="container_class"
+                    >
+                        <button class="btn-sm btn-icon__sm" type="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                            :class="button_class"
+                        >
+                            <div v-if="variant === 'slot'">
+                                <slot name="dropdown_button"></slot>
+                            </div>
+                            <div v-else>
+                                <span class="complex-list_filled" v-if="selected_filters.length > 0">
+                                    [[ selected_filters.length ]] selected
+                                </span>
+                                <span v-else class="complex-list_empty">[[ placeholder ]]</span>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu"
+                            v-if="li.length > 0"
+                            @click="$event.stopPropagation()"
+                        >
+                            <li class="dropdown-menu_item p-0" 
+                                v-for="i in li" 
+                                :key="i.idx"
+                            >
+                                <label class="d-flex align-items-center custom-checkbox px-3 py-2">
+                                    <input
+                                        :value="i.name"
+                                        v-model="selected_filters"
+                                        type="checkbox"
+                                    >
+                                    <span v-if="i.html !== undefined" v-html="i.html"></span>
+                                    <span v-else class="w-100 d-inline-block ml-3">[[ i.name ]]</span>
+                                </label>
+                            </li>
+                        </ul>
+                        <div class="dropdown-menu py-0" v-else>
+                            <span class="px-3 py-2 d-inline-block">Nothing to select</span>
+                        </div>
+                    </div>
+                </div>
+
+                <slot name="after">
+                </slot>
+            </div>
+        </div>
+        <div class="row px-4 pt-2">
+            <div class="d-flex flex-wrap filter-container" id="filters-row">
+                <removable-filter
+                    container_class="mr-2"
+                    label="SEVERITY"
+                    filter_name="severity"
+                    :itemsList="[
+                        {id: 'critical', title: 'Critical'},
+                        {id: 'high', title: 'High'},
+                        {id: 'medium', title: 'Medium'},
+                        {id: 'low', title: 'Low'},
+                        {id: 'info', title: 'Info'},
+                    ]"
+                    v-show="selected_filters.includes('severity')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+
+                <removable-filter
+                    label="TYPE"
+                    filter_name="type"
+                    container_class="mr-2"
+                    :itemsList="types_options"
+                    v-show="selected_filters.includes('type')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+
+                <removable-filter
+                    label="SOURCE"
+                    filter_name="source_type"
+                    container_class="mr-2"
+                    :itemsList="source_options"
+                    v-show="selected_filters.includes('source')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+
+                <removable-filter
+                    label="STATUS"
+                    filter_name="status"
+                    container_class="mr-2"
+                    :itemsList="[
+                        {id: 'open', title: 'Open'},
+                        {id: 'closed', title: 'Closed'},
+                    ]"
+                    v-show="selected_filters.includes('status')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+
+                <removable-filter
+                    label="TAGS"
+                    filter_name="tags"
+                    container_class="mr-2"
+                    :itemsList="tags_options"
+                    v-show="selected_filters.includes('tags')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+            </div>
+        </div>
+    </div>
+    `
+}
+
+register_component('FilterToolbarContainer', FilterToolbarContainer)

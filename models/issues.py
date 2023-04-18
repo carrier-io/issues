@@ -39,8 +39,8 @@ class ChoiceType(types.TypeDecorator):
 
 issues_tags = Table(
     'issues_tags_association', db.Base.metadata,
-    Column('issue_id', Integer, ForeignKey('carrier.issues_issues.id')),
-    Column('tag_id', Integer, ForeignKey('carrier.issues_tags.id')),
+    Column('issue_id', Integer, ForeignKey('carrier.issues_issues.id', ondelete="CASCADE")),
+    Column('tag_id', Integer, ForeignKey('carrier.issues_tags.id', ondelete="CASCADE")),
 )
 
 
@@ -61,7 +61,7 @@ class Issue(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     }
     id = Column(Integer, primary_key=True)
     hash_id = Column(String(64), unique=True, nullable=False)
-    title = Column(String(250), nullable=False)
+    title = Column(String(512), nullable=False)
     project_id = Column(Integer, nullable=False)
     report_id = Column(Integer, nullable=True)
     engagement = Column(String(64), nullable=True, default=None)

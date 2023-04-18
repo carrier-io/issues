@@ -2,6 +2,7 @@ const Tickets = {
     components: {
         'issues-table': IssuesTable,
         'engagement-aside': EngagementsListAside,
+        'engagement-card': TopEngagementCard,
     },
     data() {
         return {
@@ -18,23 +19,46 @@ const Tickets = {
         const vm = this;
         this.fetchEngagements().then(data => {
             engagements = data['items']
-            engagements.push({id: null, name:'All engagements'})
+            engagements.unshift({id: -1, name:'All engagements'})
             $(this.engagementsTableId).bootstrapTable('append', engagements);
             this.engagements = engagements
-            this.setEngagementEvent(data['items'])
+            this.setEngagementEvent(engagements)
             this.engagementCount = data['total'];
             if (data['total'] > 0) {
-                this.selectFirstEngagement();
+                this.selectEngagement(0);
             }
-            return data['items']
+            return engagements
         })
     },
     methods: {
+        refreshEngagements(){
+            currentEngIndex = this.selectedEngagementRowIndex
+            this.fetchEngagements().then(data => {
+                $(this.engagementsTableId).bootstrapTable("removeAll")
+                engagements = data['items']
+                engagements.unshift({id: -1, name:'All engagements'})
+                $(this.engagementsTableId).bootstrapTable('append', engagements);
+                this.engagements = engagements
+                this.setEngagementEvent(engagements)
+                this.engagementCount = data['total'];
+                if (data['total'] > currentEngIndex) {
+                    this.selectEngagement(currentEngIndex);
+                }
+                return engagements
+            })
+        },
+
         setEngagementEvent(engagementList) {
             const vm = this;
             $('#engagement-table').on('click', 'tbody tr:not(.no-records-found)', function(event) {
                 const selectedUniqId = parseInt(this.getAttribute('data-uniqueid'));
-                vm.selectedEngagement = engagementList.find(row => row.id === selectedUniqId);
+                for (let i=0; i<engagementList.length; i++){
+                    eng = engagementList[i]
+                    if (eng.id === selectedUniqId){
+                        vm.selectedEngagement = eng
+                        vm.selectedEngagementRowIndex = i
+                    }
+                }
                 $(this).addClass('highlight').siblings().removeClass('highlight');
             });
         },
@@ -44,14 +68,14 @@ const Tickets = {
             })
             return res.json();
         },
-        selectFirstEngagement() {
+        selectEngagement(index) {
             const vm = this;
             $('#engagement-table tbody tr').each(function(i, item) {
-                if(i === 0) {
+                if(i === index) {
                     const firstRow = $(item);
                     firstRow.addClass('highlight');
-                    vm.selectedEngagementRowIndex = 0;
-                    vm.selectedEngagement = $('#engagement-table').bootstrapTable('getData')[0];
+                    vm.selectedEngagementRowIndex = index;
+                    vm.selectedEngagement = $('#engagement-table').bootstrapTable('getData')[index];
                 }
             })
         },
@@ -62,11 +86,23 @@ const Tickets = {
                 :engagement-count="engagementCount"
                 :selected-engagement="selectedEngagement"
                 :selected-engagement-row-index="selectedEngagementRowIndex"
+                @engagementAdded="refreshEngagements"
             >
             </engagement-aside>
-            <issues-table 
-                :engagement="selectedEngagement">
-            </issues-table>
+            <div class="w-100 mr-3">
+                <div v-if="selectedEngagement.id!=-1">
+                    <engagement-card
+                        :engagement="selectedEngagement"
+                    >
+                    </engagement-card>
+                </div>
+                <div>
+                    <issues-table 
+                        :engagement="selectedEngagement"
+                        :engagementList="engagements">
+                    </issues-table>
+                </div>
+            </div>
         </main>
     `
 };

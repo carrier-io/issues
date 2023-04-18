@@ -16,15 +16,17 @@
 #   limitations under the License.
 
 """ RPC """
-import json
 import operator
 from sqlalchemy import and_, or_
-from typing import List, Dict
+from typing import List
+from ..utils.utils import delete_attachments_from_minio
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db # pylint: disable=E0401
-from ..models.issues import Issue, issues_tags
+from ..models.issues import Issue
 from ..models.tags import Tag
+from ..models.attachments import Attachment
+from ..serializers.attachment import attachments_schema, attachment_schema
 
 
 
@@ -38,8 +40,36 @@ class RPC:  # pylint: disable=E1101,R0903
 
     @web.rpc("issues_delete_issue", "delete_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def _delete_issue(self, project_id, hash_id):
-        return Issue.remove(project_id, hash_id)
+    def _delete_issue(self, project_id, id):
+        try:
+            attachment = attachment_schema.dump(
+                Attachment.query.filter_by(issue_id=id).first()
+            )
+            Issue.remove(project_id, id)
+            Issue.commit()
+        except Exception as e:
+            log.error(e)
+            db.session.rollback()
+        else:
+            delete_attachments_from_minio(self, attachment)
+
+
+    @web.rpc("issues_bulk_delete_issues", "bulk_delete_issues")
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _bulk_delete_issues(self, project_id, ids):
+        attachments = attachments_schema.dump(db.session.query(Attachment).filter(
+            Attachment.project_id==project_id,
+            Attachment.issue_id.in_(ids)
+        ).all())
+
+        query = db.session.query(Issue).filter(
+            Issue.project_id==project_id,
+            Issue.id.in_(ids)
+        )
+        query.delete()
+        db.session.commit()
+        for attachment in attachments:
+            delete_attachments_from_minio(self, attachment)
 
     @web.rpc("issues_filter_present_issues", "filter_present_issues")
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -51,6 +81,7 @@ class RPC:  # pylint: disable=E1101,R0903
         )
         issues = query.all()
         return [issue.source_id for issue in issues]
+
 
     @web.rpc("issues_update_issue", "update_issue")
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -64,6 +95,7 @@ class RPC:  # pylint: disable=E1101,R0903
         )
         return {"ok": True, "item": issue}
 
+
     @web.rpc('issues_set_engagements', "set_engagements")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _set_engagements(self, ids: List[str], engagement_id: str):
@@ -71,13 +103,14 @@ class RPC:  # pylint: disable=E1101,R0903
         query.update({Issue.engagement: engagement_id})
         db.session.commit()
         return {"ok": True}
+        
     
     @web.rpc('issues_filter_issues', 'filter_issues')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _filter_issues(self, project_id, flask_args):
         args = dict(flask_args)
-        limit = args.pop('limit', 10)
-        offset = args.pop('offset', 0)
+        limit = args.pop('limit', None)
+        offset = args.pop('offset', None)
         search = args.pop('search', None)
         sort = args.pop('sort', None)
         order = args.pop('order', None)
