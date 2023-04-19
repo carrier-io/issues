@@ -65,7 +65,7 @@ const IssuesTable = {
             fetch(url, {
                 method: 'DELETE'
             }).then(response => {
-                console.log(response)
+                this.noTicketSelected = true
                 msg = response.ok ? "Successfully deleted" : "Deletion failed"
                 msgType = response.ok ? "SUCCESS" : "ERROR"
                 showNotify(msgType, msg)
