@@ -33,14 +33,26 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def _handle_ids(self, event: dict):
         event['id'] = str(event.pop('_id'))
 
-    @auth.decorators.check_api(["orchestration_engineer"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.events.view"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": True, "editor": True},
+            "default": {"admin": True, "viewer": True, "editor": True},
+            "developer": {"admin": True, "viewer": True, "editor": True},
+        }})
     def get(self, project_id):  # pylint: disable=R0201
         events = self.module.list_events(project_id)
         for event in events:
             self._handle_ids(event)
         return {"ok":True, "items":events}, 200
 
-    @auth.decorators.check_api(["orchestration_engineer"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.events.create"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def post(self, project_id):
         payload = flask.request.json
         try:

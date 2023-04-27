@@ -43,6 +43,13 @@ class Module(module.ModuleModel):
             "table", "Issues",
             title="Issues",
             kind="slot",
+            permissions={
+                "permissions": ["orchestration.issues"],
+                "recommended_roles": {
+                    "administration": {"admin": True, "viewer": True, "editor": True},
+                    "default": {"admin": True, "viewer": True, "editor": True},
+                    "developer": {"admin": True, "viewer": True, "editor": True},
+                }},
             prefix="issues_table_slot_",
             icon_class="fas fa-server fa-fw",
             # permissions=["orchestration_engineer"],
