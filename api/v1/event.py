@@ -32,7 +32,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["orchestration_engineer"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.events.edit"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def put(self, project_id, id):  # pylint: disable=R0201
         payload = flask.request.json
         try:
@@ -45,8 +51,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         status = 200 if result['ok'] else 400
         return result, status
 
-
-    @auth.decorators.check_api(["orchestration_engineer"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.events.delete"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": False},
+            "default": {"admin": True, "viewer": False, "editor": False},
+            "developer": {"admin": True, "viewer": False, "editor": False},
+        }})
     def delete(self, project_id, id):
         result = self.module.delete_event(project_id, id)
         status = 200 if result['ok'] else 400

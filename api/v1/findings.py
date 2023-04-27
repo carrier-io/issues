@@ -36,7 +36,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-
+    @auth.decorators.check_api(["orchestration.issues.issues.create"])
     def post(self, project_id):  # pylint: disable=R0201
         findings = flask.request.json
         for finding in findings:

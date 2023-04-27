@@ -21,6 +21,7 @@ import flask_restful  # pylint: disable=E0401
 
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...tools.issues import open_issue
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -33,6 +34,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
+    @auth.decorators.check_api(["orchestration.issues.issues.create"])
     def post(self, project_id):  # pylint: disable=R0201
         report = flask.request.json
         report['centry_project_id'] = project_id

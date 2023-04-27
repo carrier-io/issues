@@ -32,7 +32,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["global_admin"])
+    @auth.decorators.check_api(["orchestration.issues.issues.view"])
     def get(self, project_id, hash_id):
         result = self.module.get_issue(project_id, hash_id)
         if not result['ok']:
@@ -40,15 +40,25 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         result['item']['id'] = str(result['item']['id'])
         return result, 200
 
-
-    @auth.decorators.check_api(["global_admin"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.issues.edit"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def put(self, project_id, hash_id):
         payload = flask.request.json
         data = self.module.update_issue(project_id, hash_id, payload)
         return data, 200
     
-    
-    @auth.decorators.check_api(["global_admin"])
+    @auth.decorators.check_api({
+        "permissions": ["orchestration.issues.issues.delete"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": False},
+            "default": {"admin": True, "viewer": False, "editor": False},
+            "developer": {"admin": True, "viewer": False, "editor": False},
+        }})
     def delete(self, project_id, hash_id):
         result = self.module.delete_issue(project_id, hash_id)
         status_code = 200 if result['ok'] else 400
