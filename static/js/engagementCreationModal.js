@@ -1,4 +1,5 @@
 const EngagementCreationModal = {
+    emits: ['added'],
     data() {
         return {
             formId: "#eng-form-create",

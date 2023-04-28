@@ -7,6 +7,7 @@ const IssuesTable = {
     },
     data() {
         return {
+            url: issues_api_url,
             issues_url: issues_api_url,
             noTicketSelected: true,
             preFilterMap: {},
@@ -81,6 +82,8 @@ const IssuesTable = {
         <div class="card mt-3 mr-3 card-table-sm w-100">
             <filter-toolbar-container
                 variant="slot"
+                :url="url"
+                resp_data_field="rows"
                 :table_id="table_id"
                 button_class="btn-sm btn-icon__sm btn-secondary"
                 :list_items="['severity', 'type', 'source', 'status', 'tags']"
@@ -96,7 +99,6 @@ const IssuesTable = {
                         <input
                             id="search-bar"
                             type="text"
-                            @input="searchChangeHandler"
                             placeholder="Search">
                         <img src="/issues/static/ico/search.svg" class="icon-search position-absolute">
                     </div>
@@ -130,9 +132,6 @@ const IssuesTable = {
                     :data-url="issues_url"
                     data-toggle="table"
                     data-unique-id="id"
-                    data-search="true"
-                    data-search-selector="#search-bar"
-
                     data-side-pagination="server"
                     data-pagination="true"
                     data-page-list="[10, 25, 50, 100, all]"
@@ -163,120 +162,3 @@ const IssuesTable = {
 }
 
 register_component('issues-table', IssuesTable);
-
-
-
-{/* <div class="row px-4 pt-4">
-<div class="col-4">
-    <h4>Tickets</h4>   
-</div>
-<div class="col-8">
-    <div class="d-flex justify-content-end">
-
-
-        <div class="mr-2 ">
-            <CustomMultiselectDropdown
-                variant="slot"
-                :list_items="['severity', 'type', 'source', 'status', 'tags']"
-                button_class="btn-sm btn-icon__sm btn-secondary"
-                :selected_items="selected_filters"
-                @change="selected_filters = $event">
-                <template #dropdown_button><i class="fa fa-filter"></i></template>
-            </CustomMultiselectDropdown>
-        </div>
-
-        
-        <ticket-creation-modal
-            :engagement="engagement"
-        >
-        </ticket-creation-modal>  
-        <button type="button" 
-            @click="deleteTickets"
-            :disabled="!noTicketSelected"
-            class="btn btn-secondary btn-sm btn-icon__sm mr-2">
-            <i class="fas fa-trash-alt"></i>
-        </button>
-        <board-creation-modal
-            :queryUrl="queryUrl"
-            :engagement="engagement"
-        >
-        </board-creation-modal>
-    </div>
-</div>
-</div>
-<div class="row px-4 pt-2">
-
-
-
-
-
-
-
-
-
-<div class="d-flex flex-wrap filter-container" id="filters-row">
-    <removable-filter
-        container_class="mr-2"
-        label="SEVERITY"
-        filter_name="severity"
-        :itemsList="[
-            {id: 'critical', title: 'Critical'},
-            {id: 'high', title: 'High'},
-            {id: 'medium', title: 'Medium'},
-            {id: 'low', title: 'Low'},
-            {id: 'info', title: 'Info'},
-        ]"
-        v-show="selected_filters.includes('severity')"
-        @filterRemoved="removeFilter"
-        @apply="applyFilter"
-    >
-    </removable-filter>
-
-    <removable-filter
-        label="TYPE"
-        filter_name="type"
-        container_class="mr-2"
-        :itemsList="types_options"
-        v-show="selected_filters.includes('type')"
-        @filterRemoved="removeFilter"
-        @apply="applyFilter"
-    >
-    </removable-filter>
-
-    <removable-filter
-        label="SOURCE"
-        filter_name="source_type"
-        container_class="mr-2"
-        :itemsList="source_options"
-        v-show="selected_filters.includes('source')"
-        @filterRemoved="removeFilter"
-        @apply="applyFilter"
-    >
-    </removable-filter>
-
-    <removable-filter
-        label="STATUS"
-        filter_name="status"
-        container_class="mr-2"
-        :itemsList="[
-            {id: 'open', title: 'Open'},
-            {id: 'closed', title: 'Closed'},
-        ]"
-        v-show="selected_filters.includes('status')"
-        @filterRemoved="removeFilter"
-        @apply="applyFilter"
-    >
-    </removable-filter>
-
-    <removable-filter
-        label="TAGS"
-        filter_name="tags"
-        container_class="mr-2"
-        :itemsList="tags_options"
-        v-show="selected_filters.includes('tags')"
-        @filterRemoved="removeFilter"
-        @apply="applyFilter"
-    >
-    </removable-filter>
-</div>
-</div> */}

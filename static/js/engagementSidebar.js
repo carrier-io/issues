@@ -5,6 +5,7 @@ const EngagementsListAside = {
         return {
             engagementsTableId: "#engagement-table",
             currentEngIndex: null,
+            engagementCount: 0,
             selectedEngagementRowIndex: 0,
             selectedEngagement: null,
             engagements: null,

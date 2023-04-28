@@ -2,6 +2,7 @@
 <script src="{{ url_for('issues.static', filename='js/vendor/jquery.serialize-object.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/axios.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script src="{{ url_for('design-system.static', filename='assets/js/vue_components/EngagementWrapper.js') }}"></script>
 
 <script>
   var boards_url = "{{ url_for('api.v1.kanban.boards', project_id=project_id)}}"
@@ -14,11 +15,9 @@
 
 <script src="{{ url_for('issues.static', filename='js/filterComponent.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/boardCreationModal.js')}}"></script>
-<script src="{{ url_for('issues.static', filename='js/engagementCard.js')}}"></script>
-<script src="{{ url_for('issues.static', filename='js/engagementCreationModal.js')}}"></script>
 <script src="{{ url_for('issues.static', filename='js/ticketCreationModal.js')}}"></script>
-<script src="{{ url_for('issues.static', filename='js/engagementSidebar.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/issuesTable.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('issues.static', filename='js/tickets.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/uploadTemplate.js') }}"></script>
+
+

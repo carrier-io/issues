@@ -113,7 +113,7 @@ function getNestedValue(fieldStr, object){
 }
 
 function setOptions(selectId='#input-engagement', engagement=null){
-  engs = vueVm.registered_components.tickets.engagements
+  engs = vueVm.registered_components.engagement_container.engagements
   engs = JSON.parse(JSON.stringify(engs))
   engs[0]['name'] = "Select"
   tagText = ``

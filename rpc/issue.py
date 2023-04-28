@@ -27,6 +27,8 @@ from ..models.issues import Issue
 from ..models.tags import Tag
 from ..models.attachments import Attachment
 from ..serializers.attachment import attachments_schema, attachment_schema
+from sqlalchemy import func
+
 
 
 
@@ -105,12 +107,35 @@ class RPC:  # pylint: disable=E1101,R0903
         return {"ok": True}
         
     
+    @web.rpc('issues_get_stats', 'get_stats')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def get_stats(self, project_id, eng_hash):
+        query = db.session.query(Issue.id)
+        query = query.filter(Issue.project_id==project_id)
+        query = query.filter(Issue.engagement==eng_hash) if eng_hash else query
+        total = query.count()
+
+        query = db.session.query(Issue.type, func.count(Issue.id).label('count'))
+        query = query.filter(Issue.project_id==project_id)
+        query = query.filter(Issue.engagement==eng_hash) if eng_hash else query
+        types_count = {item[0]:item[1] for item in query.group_by(Issue.type).all()}
+
+        query = db.session.query(Issue.id)
+        query = query.filter(Issue.project_id==project_id)
+        query = query.filter(Issue.engagement==eng_hash) if eng_hash else query
+        done_count = query.filter(Issue.state['value'].astext=="DONE").count()
+        in_progress_count = query.filter(Issue.state['value'].astext=='IN_PROGRESS').count()
+        state_count = {'done': done_count, 'in_progress': in_progress_count}
+        return {'total': total, 'types_count': types_count, 'state_count': state_count}
+        
+
+
     @web.rpc('issues_filter_issues', 'filter_issues')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _filter_issues(self, project_id, flask_args):
         args = dict(flask_args)
-        limit = args.pop('limit', None)
-        offset = args.pop('offset', None)
+        limit = args.pop('limit', 10)
+        offset = args.pop('offset', 0)
         search = args.pop('search', None)
         sort = args.pop('sort', None)
         order = args.pop('order', None)

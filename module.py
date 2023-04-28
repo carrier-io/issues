@@ -51,6 +51,7 @@ class Module(module.ModuleModel):
                 }},
             prefix="issues_table_slot_",
             icon_class="fas fa-server fa-fw",
+            weight=1,
             # permissions=["orchestration_engineer"],
         )
         # Init services
