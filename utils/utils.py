@@ -57,7 +57,6 @@ def make_create_response(fn, schema, *args, **kwargs):
 
 
 def delete_attachments_from_minio(module, attachment):
-    log.info(attachment)
     module.context.event_manager.fire_event(
         'issues_attachment_deleted', 
         {'attachment': attachment}

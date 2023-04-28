@@ -131,6 +131,10 @@ register_component('removable-filter', RemovableFilter)
 
 const FilterToolbarContainer = {
     props: {
+        url: {},
+        resp_data_field:{
+            default: 'items'
+        },
         pre_filter_map: {
             default: {}
         },
@@ -244,7 +248,7 @@ const FilterToolbarContainer = {
                 return key + "=" + encodeURIComponent(value)
             }).join('&')
             querySign = params ? "?" : ""
-            return issues_api_url + querySign + params
+            return this.url + querySign + params
         },
 
         canFetchOptions(){
@@ -302,8 +306,8 @@ const FilterToolbarContainer = {
         },
 
         async getTableData(){    
-            const response = await axios.get(issues_api_url)
-            return response.data['rows']
+            const response = await axios.get(this.url)
+            return response.data[this.resp_data_field]
         },
 
         async fetchOptions(){
@@ -330,7 +334,7 @@ const FilterToolbarContainer = {
             } else {
                 delete this.filterMap['search']
             }
-            this.$emit('applyFilter', this.queryUrl, false)
+            this.$emit('applyFilter', this.queryUrl)
         },
 
     },
@@ -351,7 +355,7 @@ const FilterToolbarContainer = {
                         <img src="/issues/static/ico/search.svg" class="icon-search position-absolute">
                 </div>
                 
-                <div class="mr-2 ">
+                <div class="mr-2">
                     <div class="dropdown_simple-list" 
                         :class="container_class"
                     >

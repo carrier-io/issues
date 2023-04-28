@@ -169,7 +169,7 @@ def parse_issue_payload(payload):
         "type": payload.get("type"),
         "status": "open",
         "state": {
-            "value": "NEW_ISSUE",
+            "value": "OPEN",
             "payload": None,
         },
         "engagement": engagement,
@@ -195,7 +195,6 @@ def open_issue(project_id, snapshot):
     return issue
 
 def create_finding_issues(issues):
-    
     new_issues = _sort_out_new_issues(issues)
     db.session.bulk_save_objects(new_issues)
     db.session.commit()

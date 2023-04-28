@@ -137,7 +137,8 @@ const BoardCreationModal = {
                                     <p class="custom-input_desc mb-2">Specify board columns</p>
                                     <select class="selectpicker bootstrap-select__b w-100-imp" data-style="btn" name="columns[]" id="columns" multiple>
                                         <option value="open">Open</option>
-                                        <option value="in_progress">In progress</option>
+                                        <option value="postponed">Postponed</option>
+                                        <option value="in progress">In progress</option>
                                         <option value="done">Done</option>
                                     </select>
                                 </div>

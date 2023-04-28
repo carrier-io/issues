@@ -1,8 +1,19 @@
-<tickets
+<engagement-container
   @register="register"
-  instance_name="tickets"
-></tickets>
+  instance_name="engagement_container"
+  >
+  
+  <template #in_engagement_navbar="{master}">
+    <engagement-card
+        :engagement="master.selectedEngagement"
+      >
+    </engagement-card>
+  </template>
 
-
-{% include "issues:issues/modal_view.html" %}
-{% include "issues:issues/part/create_modal.html" %}
+  <template #content="{master}">
+    <issues-table 
+      :engagement="master.selectedEngagement"
+      :engagementList="master.engagements">
+    </issues-table>
+  </template>
+</engagement-container>
