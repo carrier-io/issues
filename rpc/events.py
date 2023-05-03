@@ -17,7 +17,7 @@
 
 """ RPC """
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
-from tools import rpc_tools
+from tools import rpc_tools, db
 from ..models.events import Event
 
 
@@ -28,6 +28,21 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _insert_events(self, data):
         return Event.create(data)
+
+    @web.rpc("issues_save_events", "save_events")
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _save_events(self, project_id, data):
+        # pruning all project events
+        Event.query.filter_by(project_id=project_id).delete()
+        
+        # saving new events
+        events = [Event(**event) for event in data]
+        db.session.bulk_save_objects(events)
+        db.session.commit()
+
+        # retrieving events list
+        events = Event.list(project_id)
+        return events
 
     @web.rpc("issues_list_events", "list_events")
     @rpc_tools.wrap_exceptions(RuntimeError)
