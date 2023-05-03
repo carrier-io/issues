@@ -19,12 +19,9 @@
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 from tools import auth  # pylint: disable=E0401
-from plugins.issues.serializers.event import EventModel
-from plugins.issues.serializers.event import event_schema, events_schema
-from ...utils.utils import (
-    make_list_response,
-    make_create_response,
-)
+
+from plugins.issues.serializers.event import events_schema, EventModel
+from ...utils.utils import make_list_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -43,9 +40,9 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def post(self, project_id):
         payload = flask.request.json
         try:
-            event = EventModel(project_id=project_id, **payload)
+            events = [EventModel(**event).dict() for event in payload]
         except Exception as e:
-            return {"ok":False, 'error':str(e)}, 400
-        
-        fn = self.module.insert_events
-        return make_create_response(fn, event_schema, event.dict())
+            return {"ok":False, 'error':e.errors()}, 400
+
+        fn = self.module.save_events
+        return make_list_response(fn, events_schema, project_id, events)
