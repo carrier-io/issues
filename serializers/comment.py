@@ -25,7 +25,7 @@ class CommentSchema(ma.SQLAlchemyAutoSchema):
         )
 
     def get_image(self, _):
-        return url_for('kanban.static', filename='img/avatar.png', _external=True)
+        return url_for('design-system.static', filename='assets/ico/user.svg', _external=True)
 
 
 comment_schema = CommentSchema()

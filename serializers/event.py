@@ -40,6 +40,8 @@ class EventModel(BaseModel):
 
     @root_validator
     def old_new_values_should_not_be_equal(cls, values):
+        if not values.get('values'):
+            raise ValueError("Specify columns")
         old_value = values.get('values').old_value
         new_value = values.get('values').new_value
         if old_value == new_value:

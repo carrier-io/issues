@@ -17,7 +17,8 @@
 
 """ RPC """
 import operator
-from sqlalchemy import and_, or_
+from sqlalchemy.types import Unicode
+from sqlalchemy import and_, or_, func, desc, distinct
 from typing import List
 from ..utils.utils import delete_attachments_from_minio
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
@@ -28,8 +29,6 @@ from ..models.tags import Tag
 from ..models.attachments import Attachment
 from ..serializers.attachment import attachments_schema, attachment_schema
 from sqlalchemy import func
-
-
 
 
 class RPC:  # pylint: disable=E1101,R0903
@@ -129,6 +128,35 @@ class RPC:  # pylint: disable=E1101,R0903
         return {'total': total, 'types_count': types_count, 'state_count': state_count}
         
 
+    @web.rpc('issues_get_tickets', 'get_tickets')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _get_tickets(self, project_id, flask_args):
+        statuses = db.session.query(distinct(Issue.state['value'].astext.cast(Unicode))).all()
+        tickets = []
+        for status in statuses:
+            args = dict(flask_args)
+            limit = args.pop('limit', 10)
+            offset = args.pop('offset', 0)
+
+            # Query the database for the tickets of each status
+            query = db.session.query(Issue).filter(Issue.state['value'].astext.cast(Unicode)==status[0])
+            query = filter_by_args(query, project_id, args, flask_args)
+            query = query.offset(offset).limit(limit)
+            status_tickets = query.all()
+            tickets.extend(status_tickets)
+        return len(tickets), tickets
+    
+
+    @web.rpc('issues_get_filter_options', 'get_filter_options')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _get_filter_options(self, project_id, fields):
+        result = {}
+        for field in fields:
+            values = db.session.query(getattr(Issue, field))\
+                .filter(Issue.project_id==project_id)\
+                    .filter(getattr(Issue, field)!=None).distinct().all()
+            result[field] = [value[0] for value in values]
+        return result
 
     @web.rpc('issues_filter_issues', 'filter_issues')
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -178,7 +206,7 @@ class RPC:  # pylint: disable=E1101,R0903
             query = query.limit(limit)
         if offset:
             query = query.offset(offset)
-        return total, query.all() 
+        return total, query.all()
 
 
 # Utility functions
@@ -200,3 +228,30 @@ def get_event_data(project_id, hash_id, payload, obj: Issue):
             'id': hash_id,
         }
     return event_payload
+
+
+def filter_by_args(query, project_id, args, flask_args):
+    multiselect_filters = ('severity', 'type', 'status', 'source')
+
+    query = query.filter(Issue.project_id==project_id)
+    for filter_ in multiselect_filters:
+        values = flask_args.getlist(filter_)
+        if values:
+            del args[filter_]
+            query = query.filter(
+                getattr(Issue, filter_).in_(values)
+            )
+    
+    tags = flask_args.getlist('tags')
+    if tags:
+        tags = [int(x) for x in tags]
+        query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+        del args['tags']
+
+
+    filter_ = list()
+    for key, value in args.items():
+        filter_.append(operator.eq(getattr(Issue, key), value))
+    filter_ = and_(*tuple(filter_))
+    query = query.filter(filter_)
+    return query

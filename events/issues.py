@@ -16,7 +16,6 @@
 #   limitations under the License.
 
 """ Slot """
-from jira import JIRA  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import db, minio_client  # pylint: disable=E0401
@@ -38,12 +37,13 @@ class Event:  # pylint: disable=E1101,R0903
     @web.event("issues_attachment_deleted")
     def _issues_attachment_deleted(self, context, event, payload):
         attachment = payload['attachment']
-        filename = attachment['url'].split('/')[-1]
-        bucket = attachment['url'].split('/')[-2]
-        project_id = attachment['project_id']
-        project = context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        client = minio_client.MinioClient(project)
-        client.remove_file(bucket, filename)
+        for field in ('url', 'thumbnail_url'):
+            filename = getattr(attachment, field).split('/')[-1]
+            bucket = getattr(attachment, field).split('/')[-2]
+            project_id = attachment.project_id
+            project = context.rpc_manager.call.project_get_or_404(project_id=project_id)
+            client = minio_client.MinioClient(project)
+            client.remove_file(bucket, filename)
 
     @web.event("issues_added_issue")
     def _issues_added_issue(self, context, event, payload):
@@ -109,7 +109,6 @@ class Event:  # pylint: disable=E1101,R0903
             }
             Event._issues_deleted_issue(self, context, 'issues_deleted_issue', payload)
 
-
     @web.event("issues_updated_issue")
     def issue_updated(self, context, event, payload):
         '''
@@ -142,27 +141,3 @@ class Event:  # pylint: disable=E1101,R0903
                     "new_value": change_meta.get('new_value'),
                     "id": change_meta.get('id') 
                 })
-
-
-
-
-
-
-#
-# item = mongo.db.issues.find_one({
-#     "source.module": payload["source"],
-#     "source.id": payload["id"],
-# })
-# if item.get["jira"] != None:
-#     jira_client = JIRA(
-#         self.descriptor.config.get("jira_url")[item["jira"]["server"]],
-#         basic_auth=(
-#             self.descriptor.config.get("jira_login"),
-#             self.descriptor.config.get("jira_password")
-#         )
-#     )
-#     jira_client.transition_issue(
-#         item["jira"]["ticket"], "Close",
-#         comment="Closing: item is no longer present",
-#         resolution={"name": "Obsolete"}
-#     )

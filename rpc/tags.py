@@ -35,3 +35,10 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_logs(self, issue_id):
         return Log.query.filter_by(issue_id=issue_id).all()
+
+    @web.rpc("issues_get_all_tags", "get_all_tags")
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _get_all_tags(self, project_id):
+        return Tag.query.filter_by(project_id=project_id).all()
+
+    

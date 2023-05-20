@@ -13,6 +13,7 @@ class AttachmentSchema(ma.SQLAlchemyAutoSchema):
             'issue_id',
             'file_name',
             'url',
+            'thumbnail_url',
             'created_at',
             'project_id',
         )
