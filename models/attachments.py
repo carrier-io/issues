@@ -12,3 +12,4 @@ class Attachment(db_tools.AbstractBaseMixin, TimestampModelMixin, db.Base):
     issue_id = Column(Integer, ForeignKey(Issue.id, ondelete='CASCADE'))
     file_name = Column(String(300), nullable=False)
     url = Column(String(256), nullable=False, unique=True)
+    thumbnail_url = Column(String(256), nullable=True, unique=True)

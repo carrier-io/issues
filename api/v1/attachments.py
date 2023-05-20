@@ -20,10 +20,12 @@ from flask import request, url_for
 from werkzeug.utils import secure_filename
 from plugins.issues.utils.utils import make_unique_filename
 import flask_restful  # pylint: disable=E0401
-# from pylon.core.tools import log  # pylint: disable=E0611,E0401
 
-from tools import auth, api_tools  # pylint: disable=E0401
+from pylon.core.tools import log
+
+from tools import auth, api_tools, minio_client  # pylint: disable=E0401
 from plugins.issues.serializers.attachment import attachments_schema
+from plugins.issues.utils.utils import generate_thumbnail
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -51,6 +53,9 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         if not files:
             return {"ok":False, "error": "Empty payload"}
 
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        client = minio_client.MinioClient(project)
+        
         attachments = []
         for file in files:
             bucket = "issue-attachments"
@@ -58,6 +63,22 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             file.filename = make_unique_filename(secure_filename(file.filename))
             project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             api_tools.upload_file(bucket, file, project, create_if_not_exists=True)
+            
+            # thumbnail
+            try:
+                thumb_file_name, thumb_file_obj = generate_thumbnail(file)
+                client.upload_file(bucket, thumb_file_obj, thumb_file_name)
+                thumbnail_url = url_for(
+                    'api.v1.artifacts.artifact', 
+                    project_id=project_id,
+                    bucket=bucket,
+                    filename=thumb_file_name,
+                    _external=True,
+                )
+            except IOError:
+                thumbnail_url = None
+
+            
             attachments.append({
                 'file_name': original_name,
                 'url': url_for(
@@ -66,11 +87,11 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
                     bucket=bucket, 
                     filename=file.filename, 
                 _external=True),
+                'thumbnail_url': thumbnail_url,
                 'issue_id':issue_id,
             })
-        
+
         result = self.module.add_batch_attachments(project_id, attachments)
-        # result = {"ok": True}
         if not result['ok']:
             return result, 400
         

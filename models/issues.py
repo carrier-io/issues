@@ -15,7 +15,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON
 from tools import db
 from .mixins import CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin
-from pylon.core.tools import log
 
 
 class ChoiceType(types.TypeDecorator):

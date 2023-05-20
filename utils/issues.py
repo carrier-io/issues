@@ -25,10 +25,11 @@ def add_tag(issue_id_uuid, tag):
     issue = Issue.query.filter_by(hash_id=issue_id_uuid).first()
     Tag.create({'tag':tag, 'issue_id':issue.id})
 
-def add_issue_tag_line(issue, tag_name, commit=False):
-    tag = Tag.query.filter_by(tag=tag_name).first()
+def add_issue_tag_line(project_id, issue, new_tag, commit=False):
+    tag = Tag.query.filter_by(project_id=project_id, tag=new_tag['tag']).first()
     if not tag:
-        tag = Tag.create({'tag': tag_name})
+        new_tag['project_id'] = project_id
+        tag = Tag.create(new_tag)
     
     issue.tags.append(tag)
     if commit:
@@ -190,7 +191,7 @@ def open_issue(project_id, snapshot):
     issue = _validate_issue(project_id, snapshot)
     issue = Issue.create(issue)
     for tag in snapshot.get('tags', []):
-        add_issue_tag_line(issue, tag)
+        add_issue_tag_line(project_id, issue, tag)
     db.session.commit()
     return issue
 

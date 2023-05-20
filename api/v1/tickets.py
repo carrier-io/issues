@@ -20,9 +20,7 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-from ...serializers.issue import issues_schema, issue_schema
-from ...utils.issues import open_issue
-from ...utils.utils import make_create_response, make_delete_response
+from ...serializers.issue import issues_schema
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -52,9 +50,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
         self.rpc = module.context.rpc_manager.call
 
+
     def get(self, project_id):  # pylint: disable=R0201
         args = flask.request.args
-        total, resp = self.module.filter_issues(project_id, args)
+        if args.get('retrieve_options'):
+            return self.module.get_filter_options(project_id, args.getlist('filter_fields[]'))
+
+        total, resp = self.module.get_tickets(project_id, args)
         
         # engagement hash_ids mapping to engagement names
         if not args.get('engagement'):
@@ -67,22 +69,3 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             "total": total,
             "rows": issues_schema.dump(resp),
         }
-
-    def post(self, project_id):
-        return make_create_response(
-            open_issue, 
-            issue_schema, 
-            project_id, 
-            flask.request.json
-        )
-    
-    def delete(self, project_id):
-        ids = flask.request.args.getlist('id[]')
-        fn = self.module.bulk_delete_issues
-        return make_delete_response(
-            fn,
-            project_id,
-            ids
-        )
-        
-

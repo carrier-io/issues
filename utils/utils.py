@@ -2,7 +2,9 @@ from sqlalchemy.orm.exc import NoResultFound
 # from pylon.core.tools import log
 from uuid import uuid4
 from pylon.core.tools import log
-from tools import db 
+from tools import db
+from PIL import Image
+import io
 
 
 def make_unique_filename(name):
@@ -61,3 +63,14 @@ def delete_attachments_from_minio(module, attachment):
         'issues_attachment_deleted', 
         {'attachment': attachment}
     )
+
+
+def generate_thumbnail(file, size=(154, 85)):
+    with Image.open(file) as image:
+        image.thumbnail(size)
+        thumbnail_data = io.BytesIO()
+        ext = file.filename.split('.')[-1]
+        image.save(thumbnail_data, format=ext)
+        thumbnail_data.seek(0)
+        thumb_filename = "thumbnails_" + file.filename
+        return thumb_filename, thumbnail_data
