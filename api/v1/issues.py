@@ -20,7 +20,6 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
 from tools import auth  # pylint: disable=E0401
-from ...models.issues import Issue
 from ...serializers.issue import issues_schema, issue_schema
 from ...utils.issues import open_issue
 from ...utils.utils import make_create_response, make_delete_response
