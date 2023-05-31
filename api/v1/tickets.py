@@ -18,7 +18,6 @@
 """ API """
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
-
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...serializers.issue import issues_schema
 
@@ -59,13 +58,17 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         total, resp = self.module.get_tickets(project_id, args)
         
         # engagement hash_ids mapping to engagement names
-        if not args.get('engagement'):
-            hash_ids = (issue.engagement for issue in resp)
-            names = self.rpc.engagement_get_engagement_names(hash_ids)
-            for issue in resp:
-                issue.engagement = names.get(issue.engagement, issue.engagement)
-        
+        hash_ids = (issue.engagement for issue in resp)
+        names = self.rpc.engagement_get_engagement_names(hash_ids)
+        issues = issues_schema.dump(resp)
+        for issue in issues:
+            name = names.get(issue['engagement'], issue['engagement'])
+            issue['engagement'] = {
+                'hash_id': issue['engagement'],
+                'name': name
+            }
+    
         return {
             "total": total,
-            "rows": issues_schema.dump(resp),
+            "rows": issues,
         }

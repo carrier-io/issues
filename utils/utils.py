@@ -65,7 +65,7 @@ def delete_attachments_from_minio(module, attachment):
     )
 
 
-def generate_thumbnail(file, size=(154, 85)):
+def generate_thumbnail(file, size=(132, 85)):
     with Image.open(file) as image:
         image.thumbnail(size)
         thumbnail_data = io.BytesIO()
