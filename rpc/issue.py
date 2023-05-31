@@ -131,15 +131,18 @@ class RPC:  # pylint: disable=E1101,R0903
     @web.rpc('issues_get_tickets', 'get_tickets')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_tickets(self, project_id, flask_args):
-        statuses = db.session.query(distinct(Issue.state['value'].astext.cast(Unicode))).all()
+        field = flask_args.get('mapping_field')
+        statuses = db.session.query(distinct(get_modal_field(Issue, field))).all()
+
         tickets = []
         for status in statuses:
             args = dict(flask_args)
+            del args['mapping_field']
             limit = args.pop('limit', 10)
             offset = args.pop('offset', 0)
 
             # Query the database for the tickets of each status
-            query = db.session.query(Issue).filter(Issue.state['value'].astext.cast(Unicode)==status[0])
+            query = db.session.query(Issue).filter(get_modal_field(Issue, field)==status[0])
             query = filter_by_args(query, project_id, args, flask_args)
             query = query.offset(offset).limit(limit)
             status_tickets = query.all()
@@ -152,9 +155,10 @@ class RPC:  # pylint: disable=E1101,R0903
     def _get_filter_options(self, project_id, fields):
         result = {}
         for field in fields:
-            values = db.session.query(getattr(Issue, field))\
+            value = get_modal_field(Issue, field)
+            values = db.session.query(value)\
                 .filter(Issue.project_id==project_id)\
-                    .filter(getattr(Issue, field)!=None).distinct().all()
+                    .filter(value!=None).distinct().all()
             result[field] = [value[0] for value in values]
         return result
 
@@ -217,6 +221,18 @@ def get_attr(data, nested_key: str) -> str:
     for key in nested_key.split('.'):
         data = data[key]
     return data
+
+
+def get_modal_field(modal, key: str):
+    if '.' in key:
+        modal_field, *fields = key.split('.')
+        modal_field = getattr(modal, modal_field)
+        for field in fields:
+            modal_field = modal_field[field]
+        return modal_field.astext.cast(Unicode)
+    
+    field = getattr(modal, key)
+    return field
 
 
 def get_event_data(project_id, hash_id, payload, obj: Issue):

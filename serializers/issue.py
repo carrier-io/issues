@@ -34,3 +34,5 @@ issues_schema = IssueSchema(many=True, exclude=('logs',))
 
 logs_schame = LogSchema(many=True)
 tags_schema = TagSchema(many=True)
+
+issue_tags_schema = TagSchema(many=True, exclude=('project_id', ))
