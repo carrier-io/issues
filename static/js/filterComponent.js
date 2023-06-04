@@ -190,7 +190,7 @@ const FilterToolbarContainer = {
             filterMap: {},
         }
     },
-    mounted() {
+    async mounted() {
         if (this.list_items.length > 0) {
             if (typeof this.pre_selected_indexes === 'string') {
                 this.selected_filters = this.pre_selected_indexes.split(this.delimiter)
@@ -198,9 +198,7 @@ const FilterToolbarContainer = {
                 this.selected_filters = this.pre_selected_indexes
             }
         }
-        $(this.table_id).on('load-success.bs.table', async (data) => {
-            await this.fetchOptions()
-        })
+        await this.fetchOptions()
     },
     watch:{
         pre_filter_map:{
@@ -265,49 +263,36 @@ const FilterToolbarContainer = {
             this.$emit('applyFilter', this.queryUrl)
         },
 
-        getTagsOptions(issues){
-            optsSet = new Set()
-            options = []
-            issues.forEach(issue => {
-                tags = issue['tags']
-                tags.forEach(tag => {
-                    if (!optsSet.has(tag.id)){
-                        optsSet.add(tag.id)
-                        options.push({
-                            id: tag.id, 
-                            title: tag.tag
-                        })
-                    }
-                })
+        getTagsOptions(tags){
+            return tags.map(tag => {
+                return {
+                    id: tag.id,
+                    title: this.toCapilizedCase(tag.tag)
+                }
             })
-            return options
         },
 
         toCapilizedCase(str){
-            return str.charAt(0).toUpperCase() + str.slice(1)
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
         },
 
-        getFilterOptions(issues, field){
-            optsSet = new Set()
-            options = []
-            issues.forEach(issue => {
-                value = issue[field]
-                if (value){
-                    if (!optsSet.has(value)){
-                        optsSet.add(value)
-                        options.push({
-                            id: issue[field], 
-                            title: this.toCapilizedCase(value)
-                        })
-                    }
+        getFilterOptions(values){
+            return values.map(value => {
+                return {
+                    id: value,
+                    title: this.toCapilizedCase(value)
                 }
             })
-            return options
         },
 
-        async getTableData(){    
-            const response = await axios.get(this.url)
-            return response.data[this.resp_data_field]
+        async getTableData(){
+            const response = await axios.get(issues_filter_options, {
+                params: {
+                    "filter_fields": ["type", "source_type"],
+                    "retrieve_options": true,
+                }
+            })
+            return response.data
         },
 
         async fetchOptions(){
@@ -315,9 +300,9 @@ const FilterToolbarContainer = {
                 return
             }
             data = await this.getTableData()
-            this.types_options = this.getFilterOptions(data, 'type')
-            this.source_options = this.getFilterOptions(data, 'source_type')
-            this.tags_options = this.getTagsOptions(data)
+            this.types_options = this.getFilterOptions(data['type'])
+            this.source_options = this.getFilterOptions(data['source_type'])
+            await this.fetchTags()  
         },
 
         removeFilter(item){
@@ -325,6 +310,12 @@ const FilterToolbarContainer = {
             index = this.selected_filters.indexOf(item)
             this.selected_filters.splice(index, 1)
             this.$emit('applyFilter', this.queryUrl)
+        },
+
+        async fetchTags(){
+            const response = await axios.get(tags_api)
+            data = response.data
+            this.tags_options = this.getTagsOptions(data['items'])
         },
 
         searchChangeHandler(e){

@@ -11,6 +11,7 @@ from tools import db
 
 class Log(CreateReadUpdateDeleteCountMixin, TimestampModelMixin, db.Base):
     __tablename__ = "issues_logs"
+    # __table_args__ = {'schema': 'tenant'}
     
     id = Column(Integer, primary_key=True)
     issue_id = Column(Integer, ForeignKey(Issue.id))

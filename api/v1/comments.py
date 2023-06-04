@@ -22,6 +22,7 @@ from marshmallow.exceptions import ValidationError
 
 # from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from tools import auth  # pylint: disable=E0401
+from pylon.core.tools import log
 from plugins.issues.serializers.comment import comments_schema, comment_schema
 
 
@@ -35,7 +36,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.rpc = self.module.context.rpc_manager.call
 
 
-    @auth.decorators.check_api(['global_admin'])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.comments.view"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": True, "editor": True},
+            "default": {"admin": True, "viewer": True, "editor": True},
+            "developer": {"admin": True, "viewer": True, "editor": True},
+        }})
     def get(self, project_id, issue_id):
         """ Get all comments"""
         comments = self.module.list_ticket_comments(project_id, issue_id)
@@ -47,14 +54,20 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         return {"ok": True, "items":comments}
 
 
-    @auth.decorators.check_api(['global_admin'])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.comments.create"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def post(self, project_id, issue_id):
         """ Get all comments"""
         try:
-            current_user = self.rpc.auth_get_user(id=g.auth.id)
+            user = auth.current_user()
             payload = comment_schema.load(request.json)
             payload['issue_id'] = issue_id
-            payload['author_id'] = current_user['id']
+            payload['author_id'] = user['id']
         except ValidationError as err:
             messages = getattr(err, 'messages', None)
             return make_response(jsonify({**messages}), 400)
@@ -64,7 +77,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             return result, 400
 
         result['item'] = comment_schema.dump(result['item'])
-        result['item']['email'] = current_user['email']
-        result['item']['name'] = current_user['name'] 
+        result['item']['email'] = user['email']
+        result['item']['name'] = user['name'] 
         return result, 200
 

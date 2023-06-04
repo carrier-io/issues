@@ -25,6 +25,7 @@ from ...utils.issues import create_finding_issues, validate_findings
 from ...utils.utils import make_list_response
 from ...serializers.issue import issues_schema
 from pylon.core.tools import log
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -37,7 +38,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["orchestration.issues.issues.create"])
+    @auth.decorators.check_api(["engagements.issues.issues.create"])
     def post(self, project_id):  # pylint: disable=R0201
         findings = flask.request.json
         try:

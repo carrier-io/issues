@@ -11,6 +11,7 @@ from .issues import Issue
 
 class Comment(db_tools.AbstractBaseMixin, TimestampModelMixin, db.Base):
     __tablename__ = "issues_comments"
+    # __table_args__ = {'schema': 'tenant'}
     
     id = Column(Integer, primary_key=True)
     issue_id = Column(Integer, ForeignKey(Issue.id, ondelete='CASCADE'))

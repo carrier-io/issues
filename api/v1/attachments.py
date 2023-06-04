@@ -37,7 +37,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
 
 
-    @auth.decorators.check_api(['global_admin'])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.attachments.edit"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def get(self, project_id, issue_id):
         """ Get all attachments"""
         attachments = self.module.list_ticket_attachments(project_id, issue_id)
@@ -45,7 +51,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         return {"ok": True, "items":attachments}
 
 
-    @auth.decorators.check_api(['global_admin'])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.attachments.create"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }})
     def post(self, project_id, issue_id):
         """ Get all attachments"""
 

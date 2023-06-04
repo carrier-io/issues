@@ -37,13 +37,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["orchestration.issues.issues.view"])
+    @auth.decorators.check_api(["engagements.issues.issues.view"])
     def get(self, project_id, id):
         fn = self.module.get_issue
         return make_response(fn, issue_schema, project_id, id)
 
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.issues.edit"],
+        "permissions": ["engagements.issues.issues.edit"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
@@ -55,7 +55,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         return make_response(fn, issue_schema, project_id, id, payload)
     
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.issues.delete"],
+        "permissions": ["engagements.issues.issues.delete"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": False},
             "default": {"admin": True, "viewer": False, "editor": False},

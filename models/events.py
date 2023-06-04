@@ -12,6 +12,7 @@ from .mixins import CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin
 
 class Event(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     __tablename__ = "issues_events"
+    # __table_args__ = {'schema': 'tenant'}
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, nullable=False)

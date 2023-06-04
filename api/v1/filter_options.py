@@ -16,21 +16,40 @@
 #   limitations under the License.
 
 """ API """
+import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
-from tools import auth  # pylint: disable=E0401
-
-from plugins.issues.serializers.issue import tags_schema
-from ...utils.utils import make_list_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
+    """
+        API Resource
+
+        Endpoint URL structure: <pylon_root>/api/<api_version>/<plugin_name>/<resource_name>
+
+        Example:
+        - Pylon root is at "https://example.com/"
+        - Plugin name is "demo"
+        - We are in subfolder "v1"
+        - Current file name is "myapi.py"
+
+        API URL: https://example.com/api/v1/demo/myapi
+
+        API resources use check_api auth decorator
+        auth.decorators.check_api takes the following arguments:
+        - permissions
+        - scope_id=1
+        - access_denied_reply={"ok": False, "error": "access_denied"},
+    """
 
     url_params = ['<int:project_id>']
 
     def __init__(self, module):
         self.module = module
+        self.rpc = module.context.rpc_manager.call
 
-    # @auth.decorators.check_api(["orchestration_engineer"])
+
     def get(self, project_id):  # pylint: disable=R0201
-        fn = self.module.get_all_tags
-        return make_list_response(fn, tags_schema, project_id)
+        args = flask.request.args
+        return self.module.get_filter_options(
+            project_id, args.getlist('filter_fields[]')
+        )

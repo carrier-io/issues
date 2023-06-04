@@ -43,7 +43,7 @@ class Module(module.ModuleModel):
             title="Tickets",
             kind="slot",
             permissions={
-                "permissions": ["orchestration.issues"],
+                "permissions": ["engagements.issues"],
                 "recommended_roles": {
                     "administration": {"admin": True, "viewer": True, "editor": True},
                     "default": {"admin": True, "viewer": True, "editor": True},

@@ -44,7 +44,7 @@ class Slot:  # pylint: disable=E1101,R0903
 
 
     @web.slot("issues_table_slot_content")
-    @auth.decorators.check_slot(["orchestration.issues"], access_denied_reply=theme.access_denied_part)
+    @auth.decorators.check_slot(["engagements.issues"], access_denied_reply=theme.access_denied_part)
     def _content(self, context, slot, payload):
         _ = slot
         #
@@ -55,7 +55,7 @@ class Slot:  # pylint: disable=E1101,R0903
             )
 
     @web.slot("issues_table_slot_styles")
-    @auth.decorators.check_slot(["orchestration.issues"])
+    @auth.decorators.check_slot(["engagements.issues"])
     def _styles(self, context, slot, payload):
         _ = slot
         #
@@ -65,7 +65,7 @@ class Slot:  # pylint: disable=E1101,R0903
             )
 
     @web.slot("issues_table_slot_scripts")
-    @auth.decorators.check_slot(["orchestration.issues"])
+    @auth.decorators.check_slot(["engagements.issues"])
     def _scripts(self, context, slot, payload):
         _ = slot
         #

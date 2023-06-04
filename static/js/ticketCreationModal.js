@@ -1,13 +1,24 @@
 const TicketCreationModal = {
-    props: ["engagement"],
+    props: {
+        engagement:{},
+    },
+    components: {
+        'tag-input': TagInput,
+    },
+    data(){
+        return {
+            tagBtn: null,
+            selectedTags: [],
+        }
+    },
     mounted(){
         $("#modal-create").on("show.bs.modal", () => {
             $("#form-create").get(0).reset();
-            setOptions("#input-engagement", this.engagement.hash_id)
+            this.setOptions("#input-engagement", this.engagement.hash_id)
         });
 
         $("#modal-create").on("hidden.bs.modal",() => {
-            clearOptions("#input-engagement")
+            this.clearOptions("#input-engagement")
             $("#textarea-description").summernote('reset')
         });
 
@@ -19,11 +30,37 @@ const TicketCreationModal = {
         });
     },
     methods: {
+        setTags(tags){
+            this.selectedTags = tags
+        },
+        setOptions(selectId='#input-engagement', engagement=null){
+            engs = vueVm.registered_components.engagement_container.engagements
+            engs = JSON.parse(JSON.stringify(engs))
+            engs[0]['name'] = "Select"
+            tagText = ``
+            engs.forEach(eng => {
+              selected = eng.hash_id == engagement ? "selected" : "" 
+              tagText += `<option value="${eng.hash_id}" ${selected}>${eng.name}</option>`
+            });
+            $(selectId).append(tagText)
+            $(selectId).selectpicker('refresh')
+            $(selectId).selectpicker('render')
+        },
+        clearOptions(selectId='#input-engagement'){
+            $(selectId).empty()
+            $(selectId).selectpicker('refresh')
+            $(selectId).selectpicker('render')
+        },
         save(){
             var data = $("#form-create").serializeObject();
             data['description'] = $("#textarea-description").summernote('code')
-            data['tags'] = data['tags'].split(',').map(tag => tag.trim())
-            
+            data['tags'] = this.selectedTags.map(tag => {
+                return {
+                    tag: tag.title,
+                    color: tag.hex,
+                }
+            })
+
             axios.post(issues_api_url, data)
               .then(response => {
                 issueId = response.data['item']['id']
@@ -126,7 +163,10 @@ const TicketCreationModal = {
 
                             <div class="custom-input mb-3">
                                 <label for="input-tags" class="font-weight-bold mb-1">Tags</label>
-                                <input type="text"  name="tags" id="input-tags" placeholder="Text">
+                                <tag-input
+                                    @updated="setTags"
+                                >
+                                </tag-input>
                             </div>
 
                             <div class="custom-input mb-3">

@@ -33,7 +33,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["orchestration_engineer"])
+    # @auth.decorators.check_api(["orchestration_engineer"])
     def put(self, project_id, issue_id):  # pylint: disable=R0201
         try:
             tags = issue_tags_schema.load(request.json)

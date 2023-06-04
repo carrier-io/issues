@@ -34,7 +34,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
 
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.events.edit"],
+        "permissions": ["engagements.issues.events.edit"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
@@ -51,7 +51,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         return make_response(fn, event_schema, project_id, id, event.dict())
 
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.events.delete"],
+        "permissions": ["engagements.issues.events.delete"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": False},
             "default": {"admin": True, "viewer": False, "editor": False},

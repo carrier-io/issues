@@ -17,6 +17,7 @@
 
 """ RPC """
 import operator
+import json
 from sqlalchemy.types import Unicode
 from sqlalchemy import and_, or_, func, desc, distinct
 from typing import List
@@ -132,17 +133,23 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_tickets(self, project_id, flask_args):
         field = flask_args.get('mapping_field')
+        initial_params = flask_args.get("initialParams", "")
+        initial_params = json.loads(initial_params) if initial_params else {}
         statuses = db.session.query(distinct(get_modal_field(Issue, field))).all()
 
         tickets = []
         for status in statuses:
             args = dict(flask_args)
+            
             del args['mapping_field']
+            args.pop('initialParams', None)
+
             limit = args.pop('limit', 10)
             offset = args.pop('offset', 0)
 
             # Query the database for the tickets of each status
             query = db.session.query(Issue).filter(get_modal_field(Issue, field)==status[0])
+            query = apply_equality_filter(query, initial_params)
             query = filter_by_args(query, project_id, args, flask_args)
             query = query.offset(offset).limit(limit)
             status_tickets = query.all()
@@ -265,6 +272,16 @@ def filter_by_args(query, project_id, args, flask_args):
         del args['tags']
 
 
+    filter_ = list()
+    for key, value in args.items():
+        filter_.append(operator.eq(getattr(Issue, key), value))
+    filter_ = and_(*tuple(filter_))
+    query = query.filter(filter_)
+    return query
+
+
+
+def apply_equality_filter(query, args):
     filter_ = list()
     for key, value in args.items():
         filter_.append(operator.eq(getattr(Issue, key), value))
