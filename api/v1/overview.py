@@ -18,6 +18,7 @@
 """ API """
 import flask_restful  # pylint: disable=E0401
 from flask import request
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -29,6 +30,15 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
+
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.overview.view"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }
+    })
     def get(self, project_id):  # pylint: disable=R0201
         args = request.args
         eng_hash = args.get('engagement')

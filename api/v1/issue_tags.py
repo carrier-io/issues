@@ -34,6 +34,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
 
     # @auth.decorators.check_api(["orchestration_engineer"])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.tags.edit"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": True, "editor": True},
+            "default": {"admin": True, "viewer": True, "editor": True},
+            "developer": {"admin": True, "viewer": True, "editor": True},
+        }})
     def put(self, project_id, issue_id):  # pylint: disable=R0201
         try:
             tags = issue_tags_schema.load(request.json)

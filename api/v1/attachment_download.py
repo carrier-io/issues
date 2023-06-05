@@ -31,7 +31,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
 
 
-    @auth.decorators.check_api(["engagements.issues.attachments.view"])
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.attachments.download"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": False},
+            "default": {"admin": True, "viewer": False, "editor": False},
+            "developer": {"admin": True, "viewer": False, "editor": False},
+        }
+    })
     def get(self, name):
         "Attachment download"
         return flask.send_from_directory(

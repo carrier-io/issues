@@ -18,6 +18,7 @@
 """ API """
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -47,7 +48,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.module = module
         self.rpc = module.context.rpc_manager.call
 
-
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.issues.view"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": True, "editor": True},
+            "default": {"admin": True, "viewer": True, "editor": True},
+            "developer": {"admin": True, "viewer": True, "editor": True},
+        }
+    })
     def get(self, project_id):  # pylint: disable=R0201
         args = flask.request.args
         return self.module.get_filter_options(

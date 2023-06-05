@@ -36,6 +36,15 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
+
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.issues.create"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }
+    })
     def post(self, project_id):
         return make_create_response(
             open_issue, 

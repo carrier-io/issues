@@ -133,7 +133,7 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_tickets(self, project_id, flask_args):
         field = flask_args.get('mapping_field')
-        initial_params = flask_args.get("initialParams", "")
+        initial_params = flask_args.get("initialParams")
         initial_params = json.loads(initial_params) if initial_params else {}
         statuses = db.session.query(distinct(get_modal_field(Issue, field))).all()
 
@@ -149,7 +149,7 @@ class RPC:  # pylint: disable=E1101,R0903
 
             # Query the database for the tickets of each status
             query = db.session.query(Issue).filter(get_modal_field(Issue, field)==status[0])
-            query = apply_equality_filter(query, initial_params)
+            query = apply_initial_filter(query, initial_params)
             query = filter_by_args(query, project_id, args, flask_args)
             query = query.offset(offset).limit(limit)
             status_tickets = query.all()
@@ -281,10 +281,24 @@ def filter_by_args(query, project_id, args, flask_args):
 
 
 
-def apply_equality_filter(query, args):
+def apply_initial_filter(query, args: dict):
+    if args.get('initialParams'):
+        initial_params = args.pop('initialParams')
+        initial_params = json.loads(initial_params)
+        query = apply_initial_filter(query, initial_params)
+
     filter_ = list()
     for key, value in args.items():
-        filter_.append(operator.eq(getattr(Issue, key), value))
+        if key == 'tags':
+            tags = [int(x) for x in value]
+            query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+
+        elif type(value) is list:
+            query = query.filter(getattr(Issue, key).in_(value))
+        
+        else:
+            filter_.append(operator.eq(getattr(Issue, key), value))
+
     filter_ = and_(*tuple(filter_))
     query = query.filter(filter_)
     return query

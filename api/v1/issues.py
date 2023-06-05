@@ -91,6 +91,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             flask.request.json
         )
     
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.issues.delete"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }
+    })
     def delete(self, project_id):
         ids = flask.request.args.getlist('id[]')
         fn = self.module.bulk_delete_issues

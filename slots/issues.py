@@ -44,6 +44,9 @@ class Slot:  # pylint: disable=E1101,R0903
 
 
     @web.slot("issues_table_slot_content")
+    @auth.decorators.check_slot({
+        "permissions": ["engagements.issues"]
+    })
     @auth.decorators.check_slot(["engagements.issues"], access_denied_reply=theme.access_denied_part)
     def _content(self, context, slot, payload):
         _ = slot

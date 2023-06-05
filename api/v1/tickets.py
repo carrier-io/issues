@@ -20,6 +20,7 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...serializers.issue import issues_schema
+from tools import auth  # pylint: disable=E0401
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -50,6 +51,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         self.rpc = module.context.rpc_manager.call
 
 
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.issues.view"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }
+    })
     def get(self, project_id):  # pylint: disable=R0201
         args = flask.request.args
         if args.get('retrieve_options'):

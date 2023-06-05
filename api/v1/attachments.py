@@ -38,7 +38,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
 
     @auth.decorators.check_api({
-        "permissions": ["engagements.issues.attachments.edit"],
+        "permissions": ["engagements.issues.attachments.view"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
@@ -59,7 +59,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             "developer": {"admin": True, "viewer": False, "editor": True},
         }})
     def post(self, project_id, issue_id):
-        """ Get all attachments"""
+        """ Create attachments"""
 
         files = request.files.getlist("files[]")
         if not files:
