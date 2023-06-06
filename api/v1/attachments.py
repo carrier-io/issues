@@ -23,7 +23,7 @@ import flask_restful  # pylint: disable=E0401
 
 from pylon.core.tools import log
 
-from tools import auth, api_tools, minio_client  # pylint: disable=E0401
+from tools import auth, api_tools, MinioClient  # pylint: disable=E0401
 from plugins.issues.serializers.attachment import attachments_schema
 from plugins.issues.utils.utils import generate_thumbnail
 
@@ -66,7 +66,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             return {"ok":False, "error": "Empty payload"}
 
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        client = minio_client.MinioClient(project)
+        client = MinioClient(project)
         
         attachments = []
         for file in files:

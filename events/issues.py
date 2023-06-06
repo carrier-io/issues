@@ -18,7 +18,7 @@
 """ Slot """
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
-from tools import db, minio_client  # pylint: disable=E0401
+from tools import db, MinioClient  # pylint: disable=E0401
 from ..utils.issues import (
     open_issue,
     reopen_issues,
@@ -42,7 +42,7 @@ class Event:  # pylint: disable=E1101,R0903
             bucket = getattr(attachment, field).split('/')[-2]
             project_id = attachment.project_id
             project = context.rpc_manager.call.project_get_or_404(project_id=project_id)
-            client = minio_client.MinioClient(project)
+            client = MinioClient(project)
             client.remove_file(bucket, filename)
 
     @web.event("issues_added_issue")
