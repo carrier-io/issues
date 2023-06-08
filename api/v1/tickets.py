@@ -20,6 +20,7 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...serializers.issue import issues_schema
+from ...utils.utils import get_users
 from tools import auth  # pylint: disable=E0401
 
 
@@ -70,13 +71,18 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         hash_ids = (issue.engagement for issue in resp)
         names = self.rpc.engagement_get_engagement_names(hash_ids)
         issues = issues_schema.dump(resp)
+        
+        users = get_users()
         for issue in issues:
             name = names.get(issue['engagement'], issue['engagement'])
             issue['engagement'] = {
                 'hash_id': issue['engagement'],
                 'name': name
             }
-    
+            user = users.get(issue['assignee'])
+            log.info(f"Assignee: {issue['assignee']}, USER: {user}")
+            issue['assignee'] = user
+
         return {
             "total": total,
             "rows": issues,

@@ -47,14 +47,6 @@ class CreateReadUpdateDeleteCountMixin(db_tools.AbstractBaseMixin):
         obj = cls.get(project_id, id_)
         obj.delete()
 
-    def update_obj(self, data: dict):
-        for field, value in data.items():
-            if "." in field:
-                self._set_nested_attribute(field, value)
-            elif hasattr(self, field):
-                setattr(self, field, value)
-        self.commit()
-
 
 class NestedGetterSetterMixin(object):
 
@@ -87,3 +79,11 @@ class NestedGetterSetterMixin(object):
         for field in json_fields[:last_element_index]:
             table_value = table_value[field]
         table_value[json_fields[last_element_index]] = value
+
+    def update_obj(self, data: dict):
+        for field, value in data.items():
+            if "." in field:
+                self._set_nested_attribute(field, value)
+            elif hasattr(self, field):
+                setattr(self, field, value)
+        self.commit()

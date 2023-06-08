@@ -2,6 +2,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # from pylon.core.tools import log
 from uuid import uuid4
 from pylon.core.tools import log
+from tools import auth
 from tools import db
 from PIL import Image
 import io
@@ -74,3 +75,13 @@ def generate_thumbnail(file, size=(132, 85)):
         thumbnail_data.seek(0)
         thumb_filename = "thumbnails_" + file.filename
         return thumb_filename, thumbnail_data
+
+
+
+def get_users():
+    all_users = auth.list_users()
+    for user in all_users:
+        del user['last_login']   
+    return {str(user['id']): user for user in all_users}
+
+
