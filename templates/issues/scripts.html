@@ -1,11 +1,29 @@
 <script src="{{ url_for('issues.static', filename='js/vendor/bootstrap-table.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/jquery.serialize-object.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/axios.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script src="{{ url_for('engagements.static', filename='js/EngagementWrapper.js') }}"></script>
+
+<script src="{{ url_for('design-system.static', filename='assets/js/color-picker/dist/coloris.min.js') }}"></script>
+<script src="{{ url_for('design-system.static', filename='assets/js/bootstrap-tags-master/tags-customized.min.js') }}"></script>
 
 <script>
+  var tags_api = "{{ url_for('api.v1.issues.tags', project_id=project_id) }}"
+  var boards_url = "{{ url_for('api.v1.kanban.boards', project_id=project_id)}}"
+  var engagements_list = "{{ url_for('api.v1.engagements.engagements', project_id=project_id) }}"
   var issues_api_url = "{{url_for('api.v1.issues.issues', project_id=project_id)}}";
-  var issue_detail_url = "{{url_for('api.v1.issues.issue', project_id=project_id, hash_id='1').rstrip('/1')}}"
+  var issue_detail_url = "{{url_for('api.v1.issues.issue', project_id=project_id, id='1').rstrip('1')}}"
+  var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
   var view_row_id = "";
+  var issues_filter_options = "{{url_for('api.v1.issues.filter_options', project_id=project_id)}}"
 </script>
 
-<script src="{{ url_for('issues.static', filename='js/issues.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/tagInput.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/filterComponent.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/boardCreationModal.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketCreationModal.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/issuesTable.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('issues.static', filename='js/uploadTemplate.js') }}"></script>
+
+

@@ -16,11 +16,9 @@
 #   limitations under the License.
 
 """ RPC """
-from pylon.core.tools import log  # pylint: disable=E0611,E0401
-import bson
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
-from tools import rpc_tools, mongo  # pylint: disable=E0401
-
+from tools import rpc_tools, db
+from ..models.events import Event
 
 
 class RPC:  # pylint: disable=E1101,R0903
@@ -29,41 +27,34 @@ class RPC:  # pylint: disable=E1101,R0903
     @web.rpc("issues_insert_events", "insert_events")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _insert_events(self, data):
-        try:
-            mongo.db.issue_events.insert_one(data)
-        except Exception as e:
-            return {"ok": False, 'error': str(e)}
-        return {"ok": True, "item":data}
+        return Event.create(data)
 
+    @web.rpc("issues_save_events", "save_events")
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def _save_events(self, project_id, data):
+        # pruning all project events
+        Event.query.filter_by(project_id=project_id).delete()
+        
+        # saving new events
+        events = [Event(**event) for event in data]
+        db.session.bulk_save_objects(events)
+        db.session.commit()
+
+        # retrieving events list
+        events = Event.list(project_id)
+        return events
 
     @web.rpc("issues_list_events", "list_events")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _list_events(self, project_id):
-        result_set = mongo.db.issue_events.find({'project_id': project_id})
-        events = []
-        for event in result_set:
-            events.append(event)
-        return events
-
+        return Event.list(project_id)
 
     @web.rpc("issues_update_event", "update_event")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _update_event(self, project_id, id, payload):
-        object_id = bson.ObjectId(id)
-        payload = {"$set": payload}
-        try:
-            mongo.db.issue_events.update_one({"_id": object_id, 'project_id': project_id}, payload)
-        except Exception as e:
-            return {"ok":False, "error": str(e)}
-        return {'ok': True}
-
+        return Event.update(project_id, id, payload)
 
     @web.rpc("issues_delete_event", "delete_event")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _delete_event(self, project_id, id):
-        object_id = bson.ObjectId(id)
-        try:
-            mongo.db.issue_events.delete_one({"_id": object_id, 'project_id': project_id})
-        except Exception as e:
-            return {"ok":True, "error":str(e)}
-        return {"ok":True}
+        Event.remove(project_id, id)

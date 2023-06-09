@@ -18,13 +18,11 @@
 """ Module """
 
 # import sqlalchemy  # pylint: disable=E0401
-from pymongo.errors import CollectionInvalid
 from pylon.core.tools import log  # pylint: disable=E0401
 from pylon.core.tools import module  # pylint: disable=E0401
-from pylon.core.tools.context import Context as Holder  # pylint: disable=E0401
 
 from tools import theme  # pylint: disable=E0401
-# from tools import mongo
+from .utils.db import init_db
 
 
 class Module(module.ModuleModel):
@@ -37,14 +35,15 @@ class Module(module.ModuleModel):
     def init(self):
         """ Init module """
         log.info("Initializing module")
+        init_db()
         # Theme registration
         theme.register_subsection(
-            "orch_tool",
-            "table", "Issues",
-            title="Issues",
+            "engagements",
+            "table", "Tickets",
+            title="Tickets",
             kind="slot",
             permissions={
-                "permissions": ["orchestration.issues"],
+                "permissions": ["engagements.issues"],
                 "recommended_roles": {
                     "administration": {"admin": True, "viewer": True, "editor": True},
                     "default": {"admin": True, "viewer": True, "editor": True},
@@ -52,15 +51,9 @@ class Module(module.ModuleModel):
                 }},
             prefix="issues_table_slot_",
             icon_class="fas fa-server fa-fw",
+            weight=1,
             # permissions=["orchestration_engineer"],
         )
-        #
-        # theme.register_page(
-        #     "demo", "subdemo", "view",
-        #     title="Demo View",
-        #     kind="slot",
-        #     prefix="demo_slot_view_",
-        # )
         # Init services
         self.descriptor.init_all()
         

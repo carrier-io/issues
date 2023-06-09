@@ -19,10 +19,10 @@
 import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
-from ...tools.issues import open_issue
 from tools import auth  # pylint: disable=E0401
-from tools import mongo  # pylint: disable=E0401
+from ...serializers.issue import issues_schema, issue_schema
+from ...utils.issues import open_issue
+from ...utils.utils import make_create_response, make_delete_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
@@ -50,53 +50,62 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     def __init__(self, module):
         self.module = module
+        self.rpc = module.context.rpc_manager.call
 
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.issues.view"],
+        "permissions": ["engagements.issues.issues.view"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": True, "editor": True},
             "default": {"admin": True, "viewer": True, "editor": True},
             "developer": {"admin": True, "viewer": True, "editor": True},
         }})
     def get(self, project_id):  # pylint: disable=R0201
-        result = list()
-        args = dict(flask.request.args)
-        offset = args.pop("offset", 0)
-        limit = args.pop("limit", 0)
-        query = {
-            'centry_project_id': project_id,
-            **args
-        }
-        for item in mongo.db.issues.find(
-            filter=query,
-            skip=int(offset),
-            limit=int(limit),
-        ):
-            data = dict(item)
-            #
-            data.pop("_id")
-            data["id"] = str(data["id"])
-            #
-            result.append(data)
-        #
+        args = flask.request.args
+        total, resp = self.module.filter_issues(project_id, args)
+        
+        # engagement hash_ids mapping to engagement names
+        if not args.get('engagement'):
+            hash_ids = (issue.engagement for issue in resp)
+            names = self.rpc.engagement_get_engagement_names(hash_ids)
+            for issue in resp:
+                issue.engagement = names.get(issue.engagement, issue.engagement)
+        
         return {
-            "total": mongo.db.issues.count_documents(filter=query),
-            "rows": result,
+            "total": total,
+            "rows": issues_schema.dump(resp),
         }
 
     @auth.decorators.check_api({
-        "permissions": ["orchestration.issues.issues.create"],
+        "permissions": ["engagements.issues.issues.create"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
             "developer": {"admin": True, "viewer": False, "editor": True},
-        }})
+        }
+    })
     def post(self, project_id):
-        payload = flask.request.json
-        payload['centry_project_id'] = project_id
-        try:
-            open_issue(self.module, payload)
-        except Exception as e:
-            return {"ok":False, "error": str(e)}, 400
-        return {"ok": True}, 201
+        return make_create_response(
+            open_issue, 
+            issue_schema, 
+            project_id, 
+            flask.request.json
+        )
     
+    @auth.decorators.check_api({
+        "permissions": ["engagements.issues.issues.delete"],
+        "recommended_roles": {
+            "administration": {"admin": True, "viewer": False, "editor": True},
+            "default": {"admin": True, "viewer": False, "editor": True},
+            "developer": {"admin": True, "viewer": False, "editor": True},
+        }
+    })
+    def delete(self, project_id):
+        ids = flask.request.args.getlist('id[]')
+        fn = self.module.bulk_delete_issues
+        return make_delete_response(
+            fn,
+            project_id,
+            ids
+        )
+        
+

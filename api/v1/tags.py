@@ -16,11 +16,10 @@
 #   limitations under the License.
 
 """ API """
-import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 from tools import auth  # pylint: disable=E0401
 
-from plugins.issues.serializers.event import events_schema, EventModel
+from plugins.issues.serializers.issue import tags_schema
 from ...utils.utils import make_list_response
 
 
@@ -31,31 +30,14 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
 
-
     @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.view"],
-        "recommended_roles": {
-            "administration": {"admin": True, "viewer": True, "editor": True},
-            "default": {"admin": True, "viewer": True, "editor": True},
-            "developer": {"admin": True, "viewer": True, "editor": True},
-        }})
-    def get(self, project_id):  # pylint: disable=R0201
-        fn = self.module.list_events
-        return make_list_response(fn, events_schema, project_id)
-
-    @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.create"],
+        "permissions": ["engagements.issues.tags.view"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
             "developer": {"admin": True, "viewer": False, "editor": True},
-        }})
-    def post(self, project_id):
-        payload = flask.request.json
-        try:
-            events = [EventModel(**event).dict() for event in payload]
-        except Exception as e:
-            return {"ok":False, 'error':e.errors()}, 400
-
-        fn = self.module.save_events
-        return make_list_response(fn, events_schema, project_id, events)
+        }
+    })
+    def get(self, project_id):  # pylint: disable=R0201
+        fn = self.module.get_all_tags
+        return make_list_response(fn, tags_schema, project_id)

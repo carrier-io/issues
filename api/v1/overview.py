@@ -16,16 +16,15 @@
 #   limitations under the License.
 
 """ API """
-import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
+from flask import request
 from tools import auth  # pylint: disable=E0401
-
-from plugins.issues.serializers.event import events_schema, EventModel
-from ...utils.utils import make_list_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
-
+    """
+        API Resource
+    """
     url_params = ['<int:project_id>']
 
     def __init__(self, module):
@@ -33,29 +32,15 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
 
     @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.view"],
-        "recommended_roles": {
-            "administration": {"admin": True, "viewer": True, "editor": True},
-            "default": {"admin": True, "viewer": True, "editor": True},
-            "developer": {"admin": True, "viewer": True, "editor": True},
-        }})
-    def get(self, project_id):  # pylint: disable=R0201
-        fn = self.module.list_events
-        return make_list_response(fn, events_schema, project_id)
-
-    @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.create"],
+        "permissions": ["engagements.issues.overview.view"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": False, "editor": True},
             "default": {"admin": True, "viewer": False, "editor": True},
             "developer": {"admin": True, "viewer": False, "editor": True},
-        }})
-    def post(self, project_id):
-        payload = flask.request.json
-        try:
-            events = [EventModel(**event).dict() for event in payload]
-        except Exception as e:
-            return {"ok":False, 'error':e.errors()}, 400
-
-        fn = self.module.save_events
-        return make_list_response(fn, events_schema, project_id, events)
+        }
+    })
+    def get(self, project_id):  # pylint: disable=R0201
+        args = request.args
+        eng_hash = args.get('engagement')
+        resp = self.module.get_stats(project_id, eng_hash)
+        return resp

@@ -20,42 +20,44 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 from tools import auth  # pylint: disable=E0401
 
-from plugins.issues.serializers.event import events_schema, EventModel
-from ...utils.utils import make_list_response
-
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
+    """
+        API Resource
+
+        Endpoint URL structure: <pylon_root>/api/<api_version>/<plugin_name>/<resource_name>
+
+        Example:
+        - Pylon root is at "https://example.com/"
+        - Plugin name is "demo"
+        - We are in subfolder "v1"
+        - Current file name is "myapi.py"
+
+        API URL: https://example.com/api/v1/demo/myapi
+
+        API resources use check_api auth decorator
+        auth.decorators.check_api takes the following arguments:
+        - permissions
+        - scope_id=1
+        - access_denied_reply={"ok": False, "error": "access_denied"},
+    """
 
     url_params = ['<int:project_id>']
 
     def __init__(self, module):
         self.module = module
-
+        self.rpc = module.context.rpc_manager.call
 
     @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.view"],
+        "permissions": ["engagements.issues.issues.view"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": True, "editor": True},
             "default": {"admin": True, "viewer": True, "editor": True},
             "developer": {"admin": True, "viewer": True, "editor": True},
-        }})
+        }
+    })
     def get(self, project_id):  # pylint: disable=R0201
-        fn = self.module.list_events
-        return make_list_response(fn, events_schema, project_id)
-
-    @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.create"],
-        "recommended_roles": {
-            "administration": {"admin": True, "viewer": False, "editor": True},
-            "default": {"admin": True, "viewer": False, "editor": True},
-            "developer": {"admin": True, "viewer": False, "editor": True},
-        }})
-    def post(self, project_id):
-        payload = flask.request.json
-        try:
-            events = [EventModel(**event).dict() for event in payload]
-        except Exception as e:
-            return {"ok":False, 'error':e.errors()}, 400
-
-        fn = self.module.save_events
-        return make_list_response(fn, events_schema, project_id, events)
+        args = flask.request.args
+        return self.module.get_filter_options(
+            project_id, args.getlist('filter_fields[]')
+        )

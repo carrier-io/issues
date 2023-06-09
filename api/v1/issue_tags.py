@@ -16,46 +16,38 @@
 #   limitations under the License.
 
 """ API """
-import flask  # pylint: disable=E0401,W0611
+from flask import request, make_response, jsonify
 import flask_restful  # pylint: disable=E0401
 from tools import auth  # pylint: disable=E0401
+from marshmallow.exceptions import ValidationError
+from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 
-from plugins.issues.serializers.event import events_schema, EventModel
+from plugins.issues.serializers.issue import issue_tags_schema
 from ...utils.utils import make_list_response
 
 
 class API(flask_restful.Resource):  # pylint: disable=R0903
 
-    url_params = ['<int:project_id>']
+    url_params = ['<int:project_id>/<int:issue_id>']
 
     def __init__(self, module):
         self.module = module
 
-
+    # @auth.decorators.check_api(["orchestration_engineer"])
     @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.view"],
+        "permissions": ["engagements.issues.tags.edit"],
         "recommended_roles": {
             "administration": {"admin": True, "viewer": True, "editor": True},
             "default": {"admin": True, "viewer": True, "editor": True},
             "developer": {"admin": True, "viewer": True, "editor": True},
         }})
-    def get(self, project_id):  # pylint: disable=R0201
-        fn = self.module.list_events
-        return make_list_response(fn, events_schema, project_id)
-
-    @auth.decorators.check_api({
-        "permissions": ["engagements.issues.events.create"],
-        "recommended_roles": {
-            "administration": {"admin": True, "viewer": False, "editor": True},
-            "default": {"admin": True, "viewer": False, "editor": True},
-            "developer": {"admin": True, "viewer": False, "editor": True},
-        }})
-    def post(self, project_id):
-        payload = flask.request.json
+    def put(self, project_id, issue_id):  # pylint: disable=R0201
         try:
-            events = [EventModel(**event).dict() for event in payload]
-        except Exception as e:
-            return {"ok":False, 'error':e.errors()}, 400
-
-        fn = self.module.save_events
-        return make_list_response(fn, events_schema, project_id, events)
+            tags = issue_tags_schema.load(request.json)
+        except ValidationError as err:
+            log.info(err)
+            messages = getattr(err, 'messages', None)
+            return make_response(jsonify({**messages}), 400)
+        
+        fn = self.module.update_tags
+        return make_list_response(fn, issue_tags_schema, project_id, issue_id, tags)
