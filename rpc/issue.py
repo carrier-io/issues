@@ -173,8 +173,9 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _filter_issues(self, project_id, flask_args):
         args = dict(flask_args)
+        args.pop('_', None)
         limit = args.pop('limit', 10)
-        offset = args.pop('offset', 0)
+        offset = args.pop('offset', None)
         search = args.pop('search', None)
         sort = args.pop('sort', None)
         order = args.pop('order', None)
@@ -212,7 +213,7 @@ class RPC:  # pylint: disable=E1101,R0903
 
         query = query.filter(filter_)
         total = query.count()
-
+        query = query.order_by(Issue.id.asc())
         if limit:
             query = query.limit(limit)
         if offset:

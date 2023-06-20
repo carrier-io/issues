@@ -36,10 +36,11 @@ const Tickets = {
                     </engagement-card>
                 </div>
                 <div>
-                    <issues-table 
+                    <small-issues-table
                         :engagement="selectedEngagement"
-                        :engagementList="engagements">
-                    </issues-table>
+                        :engagementList="engagements"
+                    >
+                    </small-issues-table>
                 </div>
             </div>
         </main>
@@ -47,5 +48,11 @@ const Tickets = {
 };
 
 register_component('tickets', Tickets);
+
+text = `<issues-table 
+v-if="false"
+:engagement="selectedEngagement"
+:engagementList="engagements">
+</issues-table>`
 
 

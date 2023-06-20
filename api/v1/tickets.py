@@ -80,7 +80,6 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
                 'name': name
             }
             user = users.get(issue['assignee'])
-            log.info(f"Assignee: {issue['assignee']}, USER: {user}")
             issue['assignee'] = user
 
         return {

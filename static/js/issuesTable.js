@@ -1,9 +1,11 @@
 const IssuesTable = {
-    props: ['engagement', 'engagementsList'],
+    props: ['engagement'],
     components: {
         'board-creation-modal': BoardCreationModal,
         'ticket-creation-modal': TicketCreationModal,
         'filter-toolbar-container': FilterToolbarContainer,
+        'small-issues-table': SmallIssuesTable,
+        'ticket-view-container': TicketViewContainer,
     },
     data() {
         return {
@@ -11,25 +13,39 @@ const IssuesTable = {
             issues_url: issues_api_url,
             noTicketSelected: true,
             preFilterMap: {},
-            table_id: "#issues-table"
+            table_id: "#issues-table",
+            selectedTicket: null,
+            pageNumber: 1,
         }
     },
     mounted(){
         this.setTableCheckEvents()
+        $(this.table_id).on('click-row.bs.table', (e, row) => {
+            this.selectedTicket = row
+        })
+
+        $(this.table_id).on('page-change.bs.table', (e, number) => {
+            this.pageNumber = number
+        })
     },  
     watch: {
         engagement(value){
             notAllEngagements = value.id!=-1
             if (notAllEngagements){
                 this.preFilterMap['engagement'] = value.hash_id
-                $(this.table_id).bootstrapTable('hideColumn', 'engagement')
+                $(this.table_id).bootstrapTable('hideColumn', 'engagement.name')
             } else {
                 delete this.preFilterMap['engagement']
-                $(this.table_id).bootstrapTable('showColumn', 'engagement')
+                $(this.table_id).bootstrapTable('showColumn', 'engagement.name')
             }
         },
     },
     methods: {
+        handleTicketChange(ticket){
+            this.selectedTicket = ticket
+            $(this.table_id).bootstrapTable("refresh")
+        },
+
         // Table events
         setTableCheckEvents(){
             $(this.table_id).on('check.bs.table', ()=>{
@@ -79,7 +95,8 @@ const IssuesTable = {
         },
     },
     template: `
-        <div class="card mt-3 mr-3 card-table-sm w-100">
+        <div v-show="!selectedTicket" 
+            class="card mt-3 mr-3 card-table-sm w-100">
             <filter-toolbar-container
                 variant="slot"
                 :url="url"
@@ -134,6 +151,7 @@ const IssuesTable = {
                     data-unique-id="id"
                     data-side-pagination="server"
                     data-pagination="true"
+                    data-cache="false"
                     data-page-list="[10, 25, 50, 100, all]"
 
                     data-pagination-pre-text="<img src='/design-system/static/assets/ico/arrow_left.svg'>"
@@ -147,8 +165,8 @@ const IssuesTable = {
                             <th data-field="type">Type</th>
                             <th data-field="status">Status</th>
                             <th data-field="source_type">Source</th>
-                            <th data-field="assignee">Assignee</th>
-                            <th data-field="engagement">Engagement</th>
+                            <th data-field="assignee.name">Assignee</th>
+                            <th data-field="engagement.name">Engagement</th>
                             <th data-field="tags" data-events="tagsEvents" data-formatter="TagsFormatter.format">Tags</th>
                             <th data-formatter="actionsFormatter" data-events="actionsEvents"></th>
                         </tr>
@@ -157,6 +175,26 @@ const IssuesTable = {
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="detail-container">
+            <small-issues-table
+                v-show="selectedTicket"
+                :issue="selectedTicket"
+                :engagement="engagement"
+                :pageNumber="pageNumber"
+                :ticket="selectedTicket"
+                @updated="handleTicketChange"
+            >
+            </small-issues-table> 
+            
+            <ticket-view-container
+                v-if="selectedTicket"
+                ref="viewContainer"
+                :ticket="selectedTicket"
+                @updated="handleTicketChange"
+            >
+            </ticket-view-container>
         </div>
     `
 }

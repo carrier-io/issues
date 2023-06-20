@@ -1,11 +1,9 @@
 <script src="{{ url_for('issues.static', filename='js/vendor/bootstrap-table.min.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/jquery.serialize-object.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="{{ url_for('issues.static', filename='js/vendor/axios.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
-<script src="{{ url_for('engagements.static', filename='js/EngagementWrapper.js') }}"></script>
-
-<script src="{{ url_for('design-system.static', filename='assets/js/color-picker/dist/coloris.min.js') }}"></script>
-<script src="{{ url_for('design-system.static', filename='assets/js/bootstrap-tags-master/tags-customized.min.js') }}"></script>
 
 <script>
   var tags_api = "{{ url_for('api.v1.issues.tags', project_id=project_id) }}"
@@ -16,14 +14,35 @@
   var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
   var view_row_id = "";
   var issues_filter_options = "{{url_for('api.v1.issues.filter_options', project_id=project_id)}}"
+
+  var attachmentUrl = "{{url_for('api.v1.issues.attachment', project_id=project_id, id='1').rstrip('1')}}"
+  var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
+  var comments_url = "{{ url_for('api.v1.issues.comments', project_id=project_id, issue_id='1').rstrip('1') }}"
+  var comment_url = "{{ url_for('api.v1.issues.comment', project_id=project_id, id='1').rstrip('1') }}"
+  var issue_tags = "{{ url_for('api.v1.issues.issue_tags', project_id=project_id, issue_id='1').rstrip('1') }}"
+  var users_api = "{{ url_for('api.v1.admin.users', project_id=project_id) }}"
+
 </script>
+
+
+<script src="{{ url_for('engagements.static', filename='js/EngagementWrapper.js') }}"></script>
+<script src="{{ url_for('design-system.static', filename='assets/js/color-picker/dist/coloris.min.js') }}"></script>
+<script src="{{ url_for('design-system.static', filename='assets/js/bootstrap-tags-master/tags-customized.min.js') }}"></script>
+
 
 <script src="{{ url_for('issues.static', filename='js/tagInput.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/filterComponent.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/boardCreationModal.js')}}"></script>
 <script src="{{ url_for('issues.static', filename='js/ticketCreationModal.js')}}"></script>
+
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/part/activityContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/part/attachmentsContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/part/commentsContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/part/ticketDetailContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/part/ticketHeaderContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/ticketViewContainer.js')}}"></script>
+<script src="{{ url_for('issues.static', filename='js/ticketDetailView/smallIssuesTable.js') }}"></script>
+
 <script src="{{ url_for('issues.static', filename='js/issuesTable.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/utils.js') }}"></script>
 <script src="{{ url_for('issues.static', filename='js/uploadTemplate.js') }}"></script>
-
-
