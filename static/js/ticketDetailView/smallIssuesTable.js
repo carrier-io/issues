@@ -60,19 +60,15 @@ const SmallIssuesTable = {
         }
     },
     watch:{
-        ticket(value, oldValue){
-            if(!value)
-                return
-            
+        ticket(value, oldValue){            
             if (oldValue==null && value!=null){
+                this.page = this.$props.pageNumber
                 this.loadedPages.clear()
                 this.loadedPages.add(this.page)
-                $(this.table_id).bootstrapTable("refresh", {
+                $(this.table_id).bootstrapTable('refresh', {
                     url: this.preparedUrl
                 })
             }
-
-            $(`${this.table_id} tbody tr[data-uniqueid="${value.id}"]`).click()
         },
         pageNumber(value){
             this.page = value
@@ -91,23 +87,19 @@ const SmallIssuesTable = {
 
         minPage(){
             const arr = Array.from(this.loadedPages)
-            console.log(arr)
-            const res = Math.min(...arr)
-            console.log(res)
-            return res
+            return Math.min(...arr)
         },
 
     },
     mounted(){
         this.setClickEvent();
+
         $(this.table_id).on('load-success.bs.table', (e, data) => {
             this.loadedPages.add(this.page)
             this.itemsCount = data.total;
             $(this.table_id).bootstrapTable('hideLoading');
-            $(`${this.table_id} tbody tr[data-uniqueid="${this.ticket?.id}"]`).click()
-            // this.scrollTo()
+            this.selectAndScrollToTicket()
             self = this
-            $('div#smTableContainer .fixed-table-body').css('overflow', 'scroll');
             $(`div#smTableContainer .fixed-table-body`).on('scroll', function() {
                 scrollPosition = $(this).scrollTop();
                 // Check if scrolling up by comparing the previous and current scroll positions
@@ -144,19 +136,39 @@ const SmallIssuesTable = {
                 self.previousScrollTop = scrollPosition;
             });
 
-
             $(this.table_id).on('post-body.bs.table', function() {
                 if (self.needsPrependScroll){
-                    $(self.table_id).bootstrapTable('scrollTo', {value: 10, unit: 'rows'})
+                    $(self.table_id).bootstrapTable('scrollTo', {value: self.pageSize, unit: 'rows'})
                     self.needsPrependScroll = false
                 }
             });
         });
+        
         $(this.table_id).on('click-row.bs.table', (e, row) => {
             this.$emit('updated', row)
         })
     },  
     methods: {
+
+        getRowIndexById(itemId) {
+            const data = $(this.table_id).bootstrapTable('getData');
+            console.log(data)
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].id === itemId) {
+                return i;
+              }
+            }
+            return -1; 
+        },
+          
+
+        selectAndScrollToTicket(){
+            if (!this.ticket)
+                return
+            $(`${this.table_id} tbody tr[data-uniqueid="${this.ticket.id}"]`).click()
+            position = this.getRowIndexById(this.ticket.id)
+            $(this.table_id).bootstrapTable('scrollTo', {value: position, unit: 'rows'})
+        },
 
         // Table events
         setClickEvent() {
@@ -200,26 +212,12 @@ const SmallIssuesTable = {
                 $(this.table_id).bootstrapTable('hideLoading');
                 this.isLoadingTop = false;
                 this.isLoadingBottom = false;
+
+                $(`${this.table_id} tbody tr[data-uniqueid="${this.ticket?.id}"]`).click()
             })
             .catch(error => {
                 console.log('Error loading data:', error);
             });
-        },
-
-        scrollTo(){
-            if(!this.ticket)
-                return
-
-            rowIndex = this.ticket.id
-
-            // Calculate the scroll position based on the row height and desired row index
-            rowHeight = $(this.table_id).find('tr').outerHeight();
-            scrollPosition = rowHeight * rowIndex * 2;
-
-
-            el = document.querySelector("div#smTableContainer .fixed-table-body")
-            // Scroll to the desired row
-            el.scrollTo({top: scrollPosition, behavior: 'smooth'});
         },
     },
     template: `
@@ -266,6 +264,7 @@ const SmallIssuesTable = {
                         :data-url="preparedUrl"
                         data-toggle="table"
                         data-unique-id="id"
+                        data-cache="false"
                     >
                         <thead class="thead-light">
                             <tr>
