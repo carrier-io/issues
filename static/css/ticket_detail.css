@@ -5,7 +5,6 @@
     padding: 0px;
     background: #fff;
     border-radius: 4px;
-    height: calc(100vh - 113px);
 }
 
 .ticket-header-container{
@@ -162,7 +161,7 @@
     border-radius: 15px;
   }
   
-  .tag-text {
+.tag-text {
     font-family: 'Source Sans Pro';
     font-style: normal;
     font-weight: 400;
@@ -170,7 +169,6 @@
     line-height: 16px;
     color: #D71616;
 }
-  
 
 .attachment-container{
     display: flex;

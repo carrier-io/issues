@@ -53,6 +53,7 @@ const SmallIssuesTable = {
             previousScrollTop: 0,
             isLoadingTop: false,
             isLoadingBottom: false,
+            
             page: 1,
             pageSize: 10,
             needsPrependScroll: false,
@@ -63,15 +64,24 @@ const SmallIssuesTable = {
         ticket(value, oldValue){            
             if (oldValue==null && value!=null){
                 this.page = this.$props.pageNumber
-                this.loadedPages.clear()
-                this.loadedPages.add(this.page)
-                $(this.table_id).bootstrapTable('refresh', {
-                    url: this.preparedUrl
-                })
+                this.setInitialPages()
+                this.loadInitialPages()
+                this.adjustTableHeight()
             }
         },
         pageNumber(value){
             this.page = value
+        },
+
+        engagement(value){
+            notAllEngagements = value.id!=-1
+            if (notAllEngagements){
+                this.adjustTableHeight()
+                this.setTopHeightChangeObserver()
+                this.preFilterMap['engagement'] = value.hash_id
+            } else {
+                delete this.preFilterMap['engagement']
+            }
         }
     },
     computed:{
@@ -90,13 +100,17 @@ const SmallIssuesTable = {
             return Math.min(...arr)
         },
 
+        maxPageCount(){
+            return Math.floor(self.itemsCount/self.pageSize) + 1;
+        }
+
     },
     mounted(){
         this.setClickEvent();
 
         $(this.table_id).on('load-success.bs.table', (e, data) => {
-            this.loadedPages.add(this.page)
             this.itemsCount = data.total;
+            // this.loadedPages.add(this.page)
             $(this.table_id).bootstrapTable('hideLoading');
             this.selectAndScrollToTicket()
             self = this
@@ -149,10 +163,87 @@ const SmallIssuesTable = {
         })
     },  
     methods: {
+        selectNumbersNear(number, lowerBound, upperBound) {
+            const selectedNumbers = [];
+            const range = 10; // Number of consecutive numbers to select
+          
+            // Calculate the starting and ending numbers
+            let start = number - Math.floor(range / 2);
+            let end = start + range - 1;
+          
+            // Adjust the starting and ending numbers based on the boundaries
+            if (start < lowerBound) {
+              end += lowerBound - start;
+              start = lowerBound;
+            }
+            if (end > upperBound) {
+              start -= end - upperBound;
+              end = upperBound;
+            }
+          
+            // Select the consecutive numbers
+            for (let i = start; i <= end; i++) {
+              selectedNumbers.push(i);
+            }
+          
+            return selectedNumbers;
+        },
+
+        setInitialPages(){
+            this.loadedPages.clear()
+            pages = this.selectNumbersNear(this.page, 1, this.maxPageCount)
+            pages.forEach(page => {
+                this.loadedPages.add(page)
+            })
+        },
+
+        prepareLongUrl(){
+            pageSize = 100
+            offset = (this.minPage-1) * this.pageSize
+            querySign = this.issues_url.includes('?')? "&": "?"
+            url = this.issues_url + querySign + 'offset=' + offset + '&limit=' + pageSize;
+            return url
+        },
+
+        loadInitialPages(){
+            url = this.prepareLongUrl()
+            $(this.table_id).bootstrapTable("refresh", {
+                url: url
+            });
+        },
+
+        setTopHeightChangeObserver(){            
+            resizeObserver = new ResizeObserver(entries => {
+                this.adjustTableHeight();
+            });
+
+            const elements = document.getElementsByClassName('eng-header-element')
+            for (const element of elements) {
+                resizeObserver.observe(element);
+            }
+        },
+
+        adjustTableHeight() {
+            getExcessPixels = ()=>{
+                sidebar = document.getElementById('engagement-wrapper')
+                container = this.$refs.table
+                return Math.abs(sidebar.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom)
+            }
+            const totalHeight = window.innerHeight;
+            const navbarHeight = $('nav').outerHeight(true);
+            topHeight = $('.eng-header-element').outerHeight(true)
+            topHeight = topHeight? topHeight: 0
+            const table = this.$refs.table;
+            const remainingHeight = totalHeight - topHeight - navbarHeight;
+            table.style.height = `${remainingHeight}px`;
+            this.$nextTick(() => {
+                excessivePixels = getExcessPixels();
+                table.style.height = `${remainingHeight - excessivePixels}px`
+            });
+        },
 
         getRowIndexById(itemId) {
             const data = $(this.table_id).bootstrapTable('getData');
-            console.log(data)
             for (let i = 0; i < data.length; i++) {
               if (data[i].id === itemId) {
                 return i;
@@ -161,7 +252,6 @@ const SmallIssuesTable = {
             return -1; 
         },
           
-
         selectAndScrollToTicket(){
             if (!this.ticket)
                 return
@@ -183,9 +273,10 @@ const SmallIssuesTable = {
         // Table methods
         refreshTable(queryUrl, reload=true){
             this.issues_url = queryUrl
+            url = this.prepareLongUrl()
             if(reload){
                 $(this.table_id).bootstrapTable("refresh", {
-                    url: this.issues_url
+                    url: url
                 })
             }
         },
@@ -221,7 +312,7 @@ const SmallIssuesTable = {
         },
     },
     template: `
-        <div class="card mt-3 mr-3 card-table-sm table-scroll">
+        <div class="card my-3 mr-3 card-table-sm table-scroll" ref="table">
             <filter-toolbar-container
                 variant="slot"
                 :url="url"
@@ -257,7 +348,7 @@ const SmallIssuesTable = {
 
             </filter-toolbar-container>
 
-            <div class="card-body pt-0">
+            <div class="card-body pt-1">
                 <div class="small-table-container" id="smTableContainer">
                     <table class="table table-borderless fixed-table-body"
                         id="small-issues-table"

@@ -41,6 +41,7 @@ const IssuesTable = {
         },
     },
     methods: {
+        
         handleTicketChange(ticket){
             this.selectedTicket = ticket
             $(this.table_id).bootstrapTable("refresh")
@@ -178,23 +179,23 @@ const IssuesTable = {
         </div>
 
         <div class="detail-container">
-            <small-issues-table
-                v-show="selectedTicket"
-                :issue="selectedTicket"
-                :engagement="engagement"
-                :pageNumber="pageNumber"
-                :ticket="selectedTicket"
-                @updated="handleTicketChange"
-            >
-            </small-issues-table> 
-            
-            <ticket-view-container
-                v-if="selectedTicket"
-                ref="viewContainer"
-                :ticket="selectedTicket"
-                @updated="handleTicketChange"
-            >
-            </ticket-view-container>
+                <small-issues-table
+                    v-show="selectedTicket"
+                    :issue="selectedTicket"
+                    :engagement="engagement"
+                    :pageNumber="pageNumber"
+                    :ticket="selectedTicket"
+                    @updated="handleTicketChange"
+                >
+                </small-issues-table>
+                <ticket-view-container
+                    v-if="selectedTicket"
+                    ref="viewContainer"
+                    :engagement="engagement"
+                    :ticket="selectedTicket"
+                    @updated="handleTicketChange"
+                >
+                </ticket-view-container>
         </div>
     `
 }

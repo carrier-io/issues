@@ -186,6 +186,10 @@ const DropDownField = {
         $(this.$refs.fieldValue).selectpicker('hide')
     },
     watch:{
+        value(val){
+            this.newValue = val;
+        },
+
         isHovered(value){
             if(value){
                 this.refreshSelectPicker()
@@ -209,6 +213,7 @@ const DropDownField = {
         },
     },
     methods: {
+        
         refreshSelectPicker(){
             $(this.$refs.fieldValue).selectpicker('val', this.value)
             $(this.$refs.fieldValue).selectpicker('refresh')
@@ -279,7 +284,8 @@ const TagModal = {
                 {'tag': 'System', 'color': '#f89033'},
                 {'tag': 'Product', 'color':'#f32626'},
             ], 
-            selectedTags: []
+            selectedTags: [],
+            tagsValue: [],
         }
     },
     computed: {
@@ -490,6 +496,16 @@ const TicketDetailContainer = {
                 }, 
             ],
             assignee: this.ticket?.assignee,
+            ticketValue: this.ticket,
+        }
+    },
+    watch:{
+        ticket(value){
+            this.assignee = value?.assignee;
+            this.ticketValue = null
+            this.$nextTick(()=>{
+                this.ticketValue = value
+            })
         }
     },
     template: `
@@ -555,7 +571,7 @@ const TicketDetailContainer = {
             </text-field>
 
             <tag-field
-                v-if="ticket"
+                v-if="ticketValue"
                 :ticketId="ticket.id"
                 :value="ticket?.tags"
                 :url="updateUrl"

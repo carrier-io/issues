@@ -22,6 +22,31 @@ const TagInput = {
         },
     },
     methods: {
+        createInput(){
+            selectedColor = '#5933c6';
+            
+            this.tagBtn = BootstrapInputsTags.init("select[multiple][data-detail-tag]", {
+                selectedColor,
+            });
+    
+            Coloris({
+                el: '#coloris',
+                themeMode: 'light',
+                onChange: (color) => {
+                    selectedColor = color;
+                    this.tagBtn.changeColor(color)
+                },
+                swatches: [
+                    '#5933c6',
+                    '#29B8F5',
+                    '#2bd48d',
+                    '#EFE482',
+                    '#F89033',
+                    '#f32626',
+                ],
+            });
+        },
+
         isSelectedTag(tagName){
             return this.currentTags.has(tagName)
         },
@@ -38,28 +63,7 @@ const TagInput = {
     },
     async mounted(){
         await this.fetchTags()
-        selectedColor = '#5933c6';
-        
-        this.tagBtn = BootstrapInputsTags.init("select[multiple][data-detail-tag]", {
-            selectedColor,
-        });
-
-        Coloris({
-            el: '#coloris',
-            themeMode: 'light',
-            onChange: (color) => {
-                selectedColor = color;
-                this.tagBtn.changeColor(color)
-            },
-            swatches: [
-                '#5933c6',
-                '#29B8F5',
-                '#2bd48d',
-                '#EFE482',
-                '#F89033',
-                '#f32626',
-            ],
-        });
+        this.createInput()
     },
     template:`
         <div>
