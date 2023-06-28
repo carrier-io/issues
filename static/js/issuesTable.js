@@ -16,6 +16,9 @@ const IssuesTable = {
             table_id: "#issues-table",
             selectedTicket: null,
             pageNumber: 1,
+            maxPageCount: 1,
+
+            all_users: [],
         }
     },
     mounted(){
@@ -27,8 +30,19 @@ const IssuesTable = {
         $(this.table_id).on('page-change.bs.table', (e, number) => {
             this.pageNumber = number
         })
+
+        $(this.table_id).on('load-success.bs.table', (e, data) => {
+            itemsCount = data.total;
+            this.maxPageCount = Math.ceil(itemsCount/10)
+        })
     },  
     watch: {
+        async selectedTicket(value){
+            if (!value){
+                await this.setUsersOptions()
+            }
+        },
+
         engagement(value){
             notAllEngagements = value.id!=-1
             if (notAllEngagements){
@@ -41,7 +55,25 @@ const IssuesTable = {
         },
     },
     methods: {
-        
+        async setUsersOptions(){
+            generateHtmlOptions = (items, idField='id', titleField='name', currentUserId=null)=>{
+                result = items.reduce((acc, curr) => {
+                    selected = curr[idField] == currentUserId ? "selected" : "" 
+                    return acc + `<option value="${curr[idField]}" ${selected}>${curr[titleField]}</option>`
+                }, '')
+                return result
+            }
+            setOptions = (htmlText, selectId) => {
+                $(selectId).append(htmlText)
+                $(selectId).selectpicker('refresh')
+                $(selectId).selectpicker('render')
+            }
+            const resp = await fetchUsersAPI()
+            this.all_users = resp['rows'] || []
+            htmlTxt = generateHtmlOptions(this.all_users, 'id', 'name')
+            setOptions(htmlTxt, '#input-assignee')
+        },
+
         handleTicketChange(ticket){
             this.selectedTicket = ticket
             $(this.table_id).bootstrapTable("refresh")
@@ -126,6 +158,7 @@ const IssuesTable = {
                 
                 <template #after>
                     <ticket-creation-modal
+                        v-if="!selectedTicket"
                         :engagement="engagement"
                     >
                     </ticket-creation-modal>  
@@ -184,6 +217,7 @@ const IssuesTable = {
                     :issue="selectedTicket"
                     :engagement="engagement"
                     :pageNumber="pageNumber"
+                    :maxPageCount="maxPageCount"
                     :ticket="selectedTicket"
                     @updated="handleTicketChange"
                 >

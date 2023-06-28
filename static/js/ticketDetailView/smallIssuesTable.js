@@ -35,6 +35,7 @@ const SmallIssuesTable = {
     props: [
         'engagement',
         'pageNumber',
+        'maxPageCount',
         'ticket',
     ],
     emits: ['updated'],
@@ -58,15 +59,17 @@ const SmallIssuesTable = {
             pageSize: 10,
             needsPrependScroll: false,
             loadedPages: new Set(),
+            all_users: [],
         }
     },
     watch:{
-        ticket(value, oldValue){            
+        async ticket(value, oldValue){            
             if (oldValue==null && value!=null){
-                this.page = this.$props.pageNumber
-                this.setInitialPages()
-                this.loadInitialPages()
-                this.adjustTableHeight()
+                this.page = this.$props.pageNumber;
+                this.setInitialPages();
+                this.loadInitialPages();
+                this.adjustTableHeight();
+                await this.setUsersOptions();
             }
         },
         pageNumber(value){
@@ -75,6 +78,7 @@ const SmallIssuesTable = {
 
         engagement(value){
             notAllEngagements = value.id!=-1
+        
             if (notAllEngagements){
                 this.adjustTableHeight()
                 this.setTopHeightChangeObserver()
@@ -99,10 +103,6 @@ const SmallIssuesTable = {
             const arr = Array.from(this.loadedPages)
             return Math.min(...arr)
         },
-
-        maxPageCount(){
-            return Math.floor(self.itemsCount/self.pageSize) + 1;
-        }
 
     },
     mounted(){
@@ -163,6 +163,26 @@ const SmallIssuesTable = {
         })
     },  
     methods: {
+        async setUsersOptions(){
+            generateHtmlOptions = (items, idField='id', titleField='name', currentUserId=null)=>{
+                result = items.reduce((acc, curr) => {
+                    selected = curr[idField] == currentUserId ? "selected" : "" 
+                    return acc + `<option value="${curr[idField]}" ${selected}>${curr[titleField]}</option>`
+                }, '')
+                return result
+            }
+            setOptions = (htmlText, selectId) => {
+                $(selectId).append(htmlText)
+                $(selectId).selectpicker('refresh')
+                $(selectId).selectpicker('render')
+            }
+            const resp = await fetchUsersAPI()
+            this.all_users = resp['rows'] || []
+            htmlTxt = generateHtmlOptions(this.all_users, 'id', 'name')
+            setOptions(htmlTxt, '#input-assignee')
+        },
+
+
         selectNumbersNear(number, lowerBound, upperBound) {
             const selectedNumbers = [];
             const range = 10; // Number of consecutive numbers to select
@@ -173,12 +193,17 @@ const SmallIssuesTable = {
           
             // Adjust the starting and ending numbers based on the boundaries
             if (start < lowerBound) {
-              end += lowerBound - start;
               start = lowerBound;
-            }
-            if (end > upperBound) {
-              start -= end - upperBound;
+              end = lowerBound + range - 1;
+              if (end > upperBound) {
+                end = upperBound;
+              }
+            } else if (end > upperBound) {
               end = upperBound;
+              start = end - range + 1;
+              if (start < lowerBound) {
+                start = lowerBound;
+              }
             }
           
             // Select the consecutive numbers
@@ -187,7 +212,7 @@ const SmallIssuesTable = {
             }
           
             return selectedNumbers;
-        },
+        },          
 
         setInitialPages(){
             this.loadedPages.clear()
@@ -273,7 +298,10 @@ const SmallIssuesTable = {
         // Table methods
         refreshTable(queryUrl, reload=true){
             this.issues_url = queryUrl
-            url = this.prepareLongUrl()
+            url = this.issues_url
+            if(this.$props.ticket){
+                url = this.prepareLongUrl()
+            }
             if(reload){
                 $(this.table_id).bootstrapTable("refresh", {
                     url: url
@@ -341,6 +369,7 @@ const SmallIssuesTable = {
                 
                 <template #after>
                     <ticket-creation-modal
+                        v-if="ticket"
                         :engagement="engagement"
                     >
                     </ticket-creation-modal>

@@ -167,6 +167,7 @@ def parse_issue_payload(payload):
         "severity": payload.get("severity"),
         "scan_project": payload.get("project"),
         "asset": payload.get("asset"),
+        "assignee": payload.get('assignee'),
         "type": payload.get("type"),
         "status": "open",
         "state": {

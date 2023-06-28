@@ -1,3 +1,33 @@
+async function fetchUsersAPI() {
+    const api_url = V.build_api_url('admin', 'users');
+    const res = await fetch (`${api_url}/${getSelectedProjectId()}`,{
+        method: 'GET',
+    });
+    return res.json();
+}
+
+$(document).on('vue_init', async (e) => {
+    generateHtmlOptions = (items, idField='id', titleField='name', currentUserId=null)=>{
+        result = items.reduce((acc, curr) => {
+            selected = curr[idField] == currentUserId ? "selected" : "" 
+            return acc + `<option value="${curr[idField]}" ${selected}>${curr[titleField]}</option>`
+        }, '')
+        return result
+    }
+
+    setOptions = (htmlText, selectId) => {
+        $(selectId).append(htmlText)
+        $(selectId).selectpicker('refresh')
+        $(selectId).selectpicker('render')
+    }
+
+    const resp = await fetchUsersAPI()
+    const users = resp['rows'] || []
+    htmlTxt = generateHtmlOptions(users, 'id', 'name')
+    setOptions(htmlTxt, '#input-assignee')
+})
+
+
 const TicketCreationModal = {
     props: {
         engagement:{},
@@ -9,12 +39,14 @@ const TicketCreationModal = {
         return {
             tagBtn: null,
             selectedTags: [],
+            users: [],
         }
     },
-    mounted(){
+
+    mounted(){        
         $("#modal-create").on("show.bs.modal", () => {
             $("#form-create").get(0).reset();
-            this.setOptions("#input-engagement", this.engagement.hash_id)
+            this.setEngagementOptions("#input-engagement", this.engagement.hash_id)
         });
 
         $("#modal-create").on("hidden.bs.modal",() => {
@@ -33,18 +65,31 @@ const TicketCreationModal = {
         setTags(tags){
             this.selectedTags = tags
         },
-        setOptions(selectId='#input-engagement', engagement=null){
+        setOptions(htmlText, selectId){
+            $(selectId).append(htmlText)
+            $(selectId).selectpicker('refresh')
+            $(selectId).selectpicker('render')
+        },
+
+        generateHtmlOptions(items, idField='id', titleField='name', currentUserId=null){
+            result = items.reduce((acc, curr) => {
+                selected = curr[idField] == currentUserId ? "selected" : "" 
+                return acc + `<option value="${curr[idField]}" ${selected}>${curr[titleField]}</option>`
+            }, '')
+            return result
+        },
+
+        setUsersOptions(users){
+            htmlTxt = this.generateHtmlOptions(users, 'id', 'name')
+            this.setOptions(htmlTxt, '#input-assignee')
+        },
+
+        setEngagementOptions(selectId='#input-engagement', engagement=null){
             engs = vueVm.registered_components.engagement_container.engagements
             engs = JSON.parse(JSON.stringify(engs))
             engs[0]['name'] = "Select"
-            tagText = ``
-            engs.forEach(eng => {
-              selected = eng.hash_id == engagement ? "selected" : "" 
-              tagText += `<option value="${eng.hash_id}" ${selected}>${eng.name}</option>`
-            });
-            $(selectId).append(tagText)
-            $(selectId).selectpicker('refresh')
-            $(selectId).selectpicker('render')
+            htmlTxt = this.generateHtmlOptions(engs, 'hash_id', 'name', engagement)
+            this.setOptions(htmlTxt, selectId)
         },
         clearOptions(selectId='#input-engagement'){
             $(selectId).empty()
@@ -105,13 +150,14 @@ const TicketCreationModal = {
         <i class="fas fa-plus"></i>
     </button>
 
+
     <div id="modal-create" class="modal modal-small fixed-left fade shadow-sm" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-aside" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="row w-100">
                         <div class="col">
-                            <h2>Create  Ticket</h2>
+                            <h2>Create Ticket</h2>
                         </div>
                         <div class="col-xs">
                             <button type="button" class="btn  btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
@@ -172,6 +218,7 @@ const TicketCreationModal = {
                             <div class="custom-input mb-3">
                                 <label for="input-assignee" class="font-weight-bold mb-1">Assignee</label>
                                 <select class="selectpicker bootstrap-select__b w-100-imp" data-style="btn" name="assignee" id="input-assignee">
+                                    <option>Select</option>
                                 </select>
                             </div>
 
