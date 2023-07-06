@@ -23,8 +23,10 @@ const IssuesTable = {
     },
     mounted(){
         this.setTableCheckEvents()
-        $(this.table_id).on('click-row.bs.table', (e, row) => {
-            this.selectedTicket = row
+        $(this.table_id).on('click-row.bs.table', (e, row, $el, field) => {
+            if (field != "actions"){
+                this.selectedTicket = row
+            }
         })
 
         $(this.table_id).on('page-change.bs.table', (e, number) => {
@@ -202,7 +204,7 @@ const IssuesTable = {
                             <th data-field="assignee.name">Assignee</th>
                             <th data-field="engagement.name">Engagement</th>
                             <th data-field="tags" data-events="tagsEvents" data-formatter="TagsFormatter.format">Tags</th>
-                            <th data-formatter="actionsFormatter" data-events="actionsEvents"></th>
+                            <th data-field="actions" data-formatter="actionsFormatter" data-events="actionsEvents"></th>
                         </tr>
                     </thead>
                     <tbody>

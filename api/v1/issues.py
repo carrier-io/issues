@@ -53,6 +53,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
         self.rpc = module.context.rpc_manager.call
+        self.event_manager = module.context.event_manager
 
     @auth.decorators.check_api({
         "permissions": ["engagements.issues.issues.view"],
@@ -98,7 +99,8 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             open_issue, 
             issue_schema, 
             project_id, 
-            flask.request.json
+            flask.request.json,
+            self.event_manager,
         )
     
     @auth.decorators.check_api({

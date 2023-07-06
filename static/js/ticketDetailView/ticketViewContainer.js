@@ -92,6 +92,7 @@ const TicketViewContainer = {
                         </comments-container>
 
                         <activity-container
+                            v-if="ticket"
                             :ticket=ticket
                         >
                         </activity-container>

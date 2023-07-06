@@ -76,8 +76,6 @@ def generate_thumbnail(file, size=(132, 85)):
         thumb_filename = "thumbnails_" + file.filename
         return thumb_filename, thumbnail_data
 
-
-
 def get_users():
     all_users = auth.list_users()
     for user in all_users:

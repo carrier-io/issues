@@ -49,10 +49,3 @@ const Tickets = {
 
 register_component('tickets', Tickets);
 
-text = `<issues-table 
-v-if="false"
-:engagement="selectedEngagement"
-:engagementList="engagements">
-</issues-table>`
-
-

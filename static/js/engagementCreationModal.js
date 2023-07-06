@@ -15,7 +15,7 @@ const EngagementCreationModal = {
     methods: {
         save() {
             data = $(this.formId).serializeObject();
-            axios.post(engagements_list, data)
+            axios.post(engagements_url, data)
                 .then(() => {
                     this.$emit('added')
                     $(this.modalId).modal("hide");

@@ -79,5 +79,4 @@ class Issue(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     start_date = Column(Date, default=datetime.utcnow)
     end_date = Column(Date)
 
-    logs = relationship("Log", backref=backref("issue"), passive_deletes=True)
     tags = relationship("Tag", secondary=issues_tags, backref=backref("issues"))
