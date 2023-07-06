@@ -37,6 +37,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
 
     def __init__(self, module):
         self.module = module
+        self.event_manager = module.context.event_manager
 
     @auth.decorators.check_api({
         "permissions": ["engagements.issues.issues.create"],
@@ -54,7 +55,13 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             log.info(e)
             return {"ok": False, "error": "Validation error"}, 400
         
-        return make_list_response(create_finding_issues, issues_schema, issues)
+        return make_list_response(
+            create_finding_issues, 
+            issues_schema, 
+            self.event_manager,
+            project_id,
+            issues,
+        )
 
 
 

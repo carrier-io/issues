@@ -3,47 +3,47 @@ from jira import JIRA  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from ..models.issues import Issue
 from ..models.tags import Tag
-from ..models import Log
 from ..serializers.issue import issue_schema
 from tools import db
+from .logs import log_create_issue, log_tag_create, log_update_issue
 from sqlalchemy.sql import exists
+from sqlalchemy import func
 
 
-def add_log_line(source_id, source_type, log_line):
-    """ Tool """
-    issue = Issue.query.filter_by(
-        source_id=source_id, 
-        source_type=source_type
-    ).first()
-    Log.create({'log':log_line, 'issue_id':issue.id})
-
-def add_issue_log_line(issue, log_line):
-    Log.create({'log': log_line, 'issue_id': issue.id})
-
-def add_tag(issue_id_uuid, tag):
-    """ Tool """
-    issue = Issue.query.filter_by(hash_id=issue_id_uuid).first()
-    Tag.create({'tag':tag, 'issue_id':issue.id})
-
-def add_issue_tag_line(project_id, issue, new_tag, commit=False):
+def add_issue_tag_line(event_manager, project_id, issue, new_tag, commit=False):
     tag = Tag.query.filter_by(project_id=project_id, tag=new_tag['tag']).first()
     if not tag:
         new_tag['project_id'] = project_id
         tag = Tag.create(new_tag)
-    
+        log_tag_create(
+            event_manager,
+            project_id,
+            issue.id,
+            tag.id
+        )
     issue.tags.append(tag)
     if commit:
         Issue.commit()
 
-
-def set_state(issue_id_uuid, state, payload=None):
+def set_state(event_manager, project_id, issue_id_uuid, state, payload=None):
     """ Tool """
     issue = Issue.query.filter_by(hash_id=issue_id_uuid)
+    changes = {
+        'state.value': {
+            'old_value': issue.state['value'],
+            'new_value': state,
+        },
+        'state.payload': {
+            'old_value': issue.state['payload'],
+            'new_value': payload,
+        }
+    }
     issue.state['value'] = state
     issue.state['payload'] = payload
     db.session.commit()
+    log_update_issue(event_manager, project_id, issue.id, changes)
 
-def reopen_issues(source_type, issue_ids: list):
+def reopen_issues(source_type, issue_ids: list, event_manager=None, user=None):
     log.info(f"Re-opening issues - {issue_ids} - {source_type}")
     query = db.session.query(Issue).filter(
         Issue.source_type==source_type,
@@ -53,11 +53,30 @@ def reopen_issues(source_type, issue_ids: list):
         'value': "NEW_ISSUE",
         'payload': None,
     }
+
+    # prepare changes
+    issues = query.all()
+    user_changes = {}
+    for issue in issues:
+        user_changes[issue.id] = {
+            'state.value': {
+                'old_value': issue.state['value'],
+                'new_value': state['value'],
+            },
+            'state.payload': {
+                'old_value': issue.state['payload'],
+                'new_value': state['payload']
+            }
+        }
+
     query.update({
         Issue.status: 'open',
         Issue.state: state
     })
     db.session.commit()
+    for issue in issues:
+        changes = user_changes[issue.id]
+        log_update_issue(event_manager, issue.project_id, issue.id, changes, user)
 
 def create_jira_ticket(self, issue_data):
     #
@@ -141,7 +160,6 @@ def search_issue(source_id, source_type):
             )
         ).scalar()
 
-
 def stringify_description(description):
     if not type(description) == str:
         return '\n'.join(description)
@@ -167,6 +185,7 @@ def parse_issue_payload(payload):
         "severity": payload.get("severity"),
         "scan_project": payload.get("project"),
         "asset": payload.get("asset"),
+        "assignee": payload.get('assignee'),
         "type": payload.get("type"),
         "status": "open",
         "state": {
@@ -187,18 +206,25 @@ def _validate_issue(project_id, snapshot):
 def validate_findings(project_id, findings):
     return [_validate_issue(project_id, finding) for finding in findings]
 
-def open_issue(project_id, snapshot):
+def open_issue(project_id, snapshot, event_manager=None, user=None):
     issue = _validate_issue(project_id, snapshot)
     issue = Issue.create(issue)
     for tag in snapshot.get('tags', []):
-        add_issue_tag_line(project_id, issue, tag)
+        add_issue_tag_line(event_manager, project_id, issue, tag)
     db.session.commit()
+    if event_manager:
+        log_create_issue(event_manager, project_id, issue.id, user)
     return issue
 
-def create_finding_issues(issues):
+def create_finding_issues(event_manager, project_id, issues):
+    latest_id = db.session.query(func.max(Issue.id)).scalar()
+    latest_id = 0 if latest_id is None else latest_id
     new_issues = _sort_out_new_issues(issues)
     db.session.bulk_save_objects(new_issues)
     db.session.commit()
+    for issue in new_issues:
+        latest_id += 1
+        log_create_issue(event_manager, project_id, latest_id)
     return new_issues
 
 def _sort_out_new_issues(issues) -> list:

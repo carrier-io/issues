@@ -16,12 +16,13 @@
 #   limitations under the License.
 
 """ RPC """
-from pylon.core.tools import web  # pylint: disable=E0611,E0401
+import json
+from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db
 from ..models.tags import Tag
-from ..models.logs import Log
 from ..models.issues import Issue
 from ..utils.issues import add_issue_tag_line
+from ..utils.logs import log_update_issue
 
 
 class RPC:  # pylint: disable=E1101,R0903
@@ -32,25 +33,35 @@ class RPC:  # pylint: disable=E1101,R0903
     def _get_tags(self, issue_id):
         return Tag.query.filter_by(issue_id=issue_id).all()
 
-    @web.rpc("issues_get_logs", "get_logs")
-    @rpc_tools.wrap_exceptions(RuntimeError)
-    def _get_logs(self, issue_id):
-        return Log.query.filter_by(issue_id=issue_id).all()
-
     @web.rpc("issues_get_all_tags", "get_all_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_all_tags(self, project_id):
         return Tag.query.filter_by(project_id=project_id).all()
-    
 
     @web.rpc("issues_update_tags", "update_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _update_tags(self, project_id, issue_id, tags):
         issue = Issue.get(project_id, issue_id)
+        old_tags = json.dumps([tag.tag for tag in issue.tags])
+        new_tags = json.dumps([tag['tag'] for tag in tags])
+        changes = {
+            'tags': {
+                'old_value': old_tags,
+                'new_value': new_tags,
+            }
+        }
         issue.tags.clear()
         for tag in tags:
-            add_issue_tag_line(project_id, issue, tag)
+            add_issue_tag_line(self.context.event_manager, project_id, issue, tag)
         db.session.commit()
+
+        log_update_issue(
+            self.context.event_manager, 
+            project_id, 
+            issue.id, 
+            changes
+        )
+
         return issue.tags
 
     

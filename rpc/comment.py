@@ -22,6 +22,7 @@ from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 # from tools import db_tools  # pylint: disable=E0401
 from tools import rpc_tools, db  # pylint: disable=E0401
+from plugins.issues.utils.logs import log_comment_create, log_comment_update, log_comment_delete
 
 from plugins.issues.models.comments import Comment
 
@@ -42,6 +43,12 @@ class RPC:  # pylint: disable=E1101,R0903
             db.session.add(comment)
             db.session.flush()
             db.session.commit()
+            log_comment_create(
+                self.context.event_manager,
+                project_id,
+                comment.issue_id,
+                comment.id
+            )
         except Exception as e:
             log.error(e)
             db.session.rollback()
@@ -57,11 +64,23 @@ class RPC:  # pylint: disable=E1101,R0903
         if not comment:
             return {"ok":False, "error":'Not Found'}
 
+        changes = {}
         for field, value in payload.items():
+            changes[field] = {
+                'old_value': getattr(comment, field),
+                'new_value': value
+            }
             if hasattr(comment, field):
                 setattr(comment, field, value)
 
         db.session.commit()
+        log_comment_update(
+            self.context.event_manager,
+            project_id,
+            comment.issue_id,
+            id,
+            changes,
+        )
         return {"ok":True, "item": comment}
 
 
@@ -75,4 +94,10 @@ class RPC:  # pylint: disable=E1101,R0903
         db.session.delete(comment)
         db.session.commit()
         
+        log_comment_delete(
+            self.context.event_manager,
+            project_id,
+            comment.issue_id,
+            id,
+        )
         return {"ok":True}

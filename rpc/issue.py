@@ -22,6 +22,7 @@ from sqlalchemy.types import Unicode
 from sqlalchemy import and_, or_, func, desc, distinct
 from typing import List
 from ..utils.utils import delete_attachments_from_minio
+from ..utils.logs import log_delete_issue, log_update_issue
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db # pylint: disable=E0401
@@ -30,6 +31,7 @@ from ..models.tags import Tag
 from ..models.attachments import Attachment
 from ..serializers.attachment import attachments_schema, attachment_schema
 from sqlalchemy import func
+from tools import auth  # pylint: disable=E0401
 
 
 class RPC:  # pylint: disable=E1101,R0903
@@ -49,6 +51,7 @@ class RPC:  # pylint: disable=E1101,R0903
             )
             Issue.remove(project_id, id)
             Issue.commit()
+            log_delete_issue(self.context.event_manager, project_id, id)
         except Exception as e:
             log.error(e)
             db.session.rollback()
@@ -70,6 +73,8 @@ class RPC:  # pylint: disable=E1101,R0903
         )
         query.delete()
         db.session.commit()
+        for id in ids:
+            log_delete_issue(self.context.event_manager, project_id, id)
         for attachment in attachments:
             delete_attachments_from_minio(self, attachment)
 
@@ -90,7 +95,10 @@ class RPC:  # pylint: disable=E1101,R0903
     def _update_issue(self, project_id, hash_id, payload:dict):    
         issue = Issue.get(project_id, hash_id)
         event_data = get_event_data(project_id, hash_id, payload, issue)
+        changes = get_changes(payload, issue)
         issue.update_obj(payload)
+        log_update_issue(self.context.event_manager, project_id, issue.id, changes)
+        
         self.context.event_manager.fire_event(
             'issues_updated_issue', 
             event_data
@@ -173,8 +181,9 @@ class RPC:  # pylint: disable=E1101,R0903
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _filter_issues(self, project_id, flask_args):
         args = dict(flask_args)
+        args.pop('_', None)
         limit = args.pop('limit', 10)
-        offset = args.pop('offset', 0)
+        offset = args.pop('offset', None)
         search = args.pop('search', None)
         sort = args.pop('sort', None)
         order = args.pop('order', None)
@@ -212,7 +221,7 @@ class RPC:  # pylint: disable=E1101,R0903
 
         query = query.filter(filter_)
         total = query.count()
-
+        query = query.order_by(Issue.id.asc())
         if limit:
             query = query.limit(limit)
         if offset:
@@ -241,6 +250,15 @@ def get_modal_field(modal, key: str):
     field = getattr(modal, key)
     return field
 
+
+def get_changes(payload, obj: Issue):
+    changes = {}
+    for key in payload.keys():
+        changes[key] = {
+            'old_value': obj.get_field_value(key),
+            'new_value': payload[key],
+        }
+    return changes
 
 def get_event_data(project_id, hash_id, payload, obj: Issue):
     event_payload = {'project_id': project_id}

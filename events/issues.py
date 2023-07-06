@@ -22,9 +22,9 @@ from tools import db, MinioClient  # pylint: disable=E0401
 from ..utils.issues import (
     open_issue,
     reopen_issues,
-    add_log_line,
     get_snapshot
 )
+from ..utils.logs import log_update_issue
 from ..models.events import Event as EventModel
 from ..models.issues import Issue
 
@@ -37,6 +37,9 @@ class Event:  # pylint: disable=E1101,R0903
     @web.event("issues_attachment_deleted")
     def _issues_attachment_deleted(self, context, event, payload):
         attachment = payload['attachment']
+        if not attachment:
+            return
+        
         for field in ('url', 'thumbnail_url'):
             filename = getattr(attachment, field).split('/')[-1]
             bucket = getattr(attachment, field).split('/')[-2]
@@ -50,7 +53,7 @@ class Event:  # pylint: disable=E1101,R0903
         log.info("Event: %s - %s", event, payload)
         project_id = payload.get('project_id')
         snapshot = get_snapshot(self, payload['source'], payload['id'])
-        open_issue(project_id, snapshot)
+        open_issue(project_id, snapshot, context.event_manager)
 
     @web.event("issues_bulk_added_issue")
     def _issues_bulk_added_issue(self, context, event, payload):
@@ -62,17 +65,20 @@ class Event:  # pylint: disable=E1101,R0903
             return
         
         try:
+            user = payload['user']
             closed_issues_ids = self.filter_present_issues(payload["source"], new_ids)
             new_issues_ids = set(new_ids) - set(closed_issues_ids)
             # creating new issues
             for id in new_issues_ids:
                 log.info(f"Creating new issue - {id} - {payload['source']}")
                 snapshot = get_snapshot(self, payload['source'], id)
-                open_issue(payload['project_id'], snapshot)
+                with self.context.app.app_context():
+                    open_issue(payload['project_id'], snapshot, context.event_manager, user)
 
             # re-open issues
             if closed_issues_ids:
-                reopen_issues(payload['source'], closed_issues_ids)
+                with self.context.app.app_context():
+                    reopen_issues(payload['source'], closed_issues_ids, context.event_manager, user)
 
             log.info("Successfully new issues created/re-opened")
         except Exception as e:
@@ -82,20 +88,33 @@ class Event:  # pylint: disable=E1101,R0903
     def _issues_deleted_issue(self, context, event, payload):
         log.info("Event: %s - %s", event, payload)
         #
-        add_log_line(
-            payload['id'], 
-            payload['source'], 
-            "Closing: source vulnerability removed"
-        )
-        #
         issue = Issue.query.filter_by(
             source_type=payload['source'],
             source_id=payload['id']
         ).first()
+        project_id = issue.project_id
+        changes = {
+            'state.value': {
+                'old_value': issue.state['value'],
+                'new_value': "CLOSED_ISSUE",
+            },
+            'state.payload': {
+                'old_value': issue.state['payload'],
+                'new_value': None,
+            },
+            'status': {
+                'old_value': issue.status,
+                'new_value': 'closed'
+            }
+        }
+        
         issue.status = "closed"
         issue.state['value'] = "CLOSED_ISSUE"
         issue.state['payload'] = None
         db.session.commit()
+        with self.context.app.app_context():
+            user = payload['user']
+            log_update_issue(self.context.event_manager, project_id, issue.id, changes, user)
 
     @web.event("issues_enagegement_deleted")
     def engagement_deleted(self, context, event, payload):

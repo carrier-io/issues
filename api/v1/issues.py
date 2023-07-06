@@ -20,8 +20,10 @@ import flask  # pylint: disable=E0401,W0611
 import flask_restful  # pylint: disable=E0401
 
 from tools import auth  # pylint: disable=E0401
+from pylon.core.tools import log  # pylint: disable=E0611,E0401,W0611
 from ...serializers.issue import issues_schema, issue_schema
 from ...utils.issues import open_issue
+from ...utils.utils import get_users
 from ...utils.utils import make_create_response, make_delete_response
 
 
@@ -51,6 +53,7 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
     def __init__(self, module):
         self.module = module
         self.rpc = module.context.rpc_manager.call
+        self.event_manager = module.context.event_manager
 
     @auth.decorators.check_api({
         "permissions": ["engagements.issues.issues.view"],
@@ -64,15 +67,23 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
         total, resp = self.module.filter_issues(project_id, args)
         
         # engagement hash_ids mapping to engagement names
-        if not args.get('engagement'):
-            hash_ids = (issue.engagement for issue in resp)
-            names = self.rpc.engagement_get_engagement_names(hash_ids)
-            for issue in resp:
-                issue.engagement = names.get(issue.engagement, issue.engagement)
+        hash_ids = (issue.engagement for issue in resp)
+        names = self.rpc.engagement_get_engagement_names(hash_ids)
+        issues = issues_schema.dump(resp)
+        
+        users = get_users()
+        for issue in issues:
+            name = names.get(issue['engagement'], issue['engagement'])
+            issue['engagement'] = {
+                'hash_id': issue['engagement'],
+                'name': name
+            }
+            user = users.get(issue['assignee'])
+            issue['assignee'] = user
         
         return {
             "total": total,
-            "rows": issues_schema.dump(resp),
+            "rows": issues,
         }
 
     @auth.decorators.check_api({
@@ -88,7 +99,8 @@ class API(flask_restful.Resource):  # pylint: disable=R0903
             open_issue, 
             issue_schema, 
             project_id, 
-            flask.request.json
+            flask.request.json,
+            self.event_manager,
         )
     
     @auth.decorators.check_api({
