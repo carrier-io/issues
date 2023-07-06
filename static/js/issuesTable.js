@@ -23,17 +23,18 @@ const IssuesTable = {
     },
     mounted(){
         this.setTableCheckEvents()
-        $(this.table_id).on('click-row.bs.table', (e, row, $el, field) => {
+        const $table = $(this.table_id)
+        $table.on('click-row.bs.table', (e, row, $el, field) => {
             if (field != "actions"){
                 this.selectedTicket = row
             }
         })
 
-        $(this.table_id).on('page-change.bs.table', (e, number) => {
+        $table.on('page-change.bs.table', (e, number) => {
             this.pageNumber = number
         })
 
-        $(this.table_id).on('load-success.bs.table', (e, data) => {
+        $table.on('load-success.bs.table', (e, data) => {
             itemsCount = data.total;
             this.maxPageCount = Math.ceil(itemsCount/10)
         })
@@ -47,12 +48,13 @@ const IssuesTable = {
 
         engagement(value){
             notAllEngagements = value.id!=-1
+            const $table = $(this.table_id)
             if (notAllEngagements){
                 this.preFilterMap['engagement'] = value.hash_id
-                $(this.table_id).bootstrapTable('hideColumn', 'engagement.name')
+                $table.bootstrapTable('hideColumn', 'engagement.name')
             } else {
                 delete this.preFilterMap['engagement']
-                $(this.table_id).bootstrapTable('showColumn', 'engagement.name')
+                $table.bootstrapTable('showColumn', 'engagement.name')
             }
         },
     },
@@ -66,9 +68,10 @@ const IssuesTable = {
                 return result
             }
             setOptions = (htmlText, selectId) => {
-                $(selectId).append(htmlText)
-                $(selectId).selectpicker('refresh')
-                $(selectId).selectpicker('render')
+                const $select = $(selectId)
+                $select.append(htmlText)
+                $select.selectpicker('refresh')
+                $select.selectpicker('render')
             }
             const resp = await fetchUsersAPI()
             this.all_users = resp['rows'] || []
@@ -83,20 +86,21 @@ const IssuesTable = {
 
         // Table events
         setTableCheckEvents(){
-            $(this.table_id).on('check.bs.table', ()=>{
+            const $table = $(this.table_id)
+            $table.on('check.bs.table', ()=>{
                 this.noTicketSelected = false;
             })
-            $(this.table_id).on('check-all.bs.table', ()=>{
+            $table.on('check-all.bs.table', ()=>{
                 this.noTicketSelected = false;
             })
-            $(this.table_id).on('check-all.bs.table', ()=>{
+            $table.on('check-all.bs.table', ()=>{
                 this.noTicketSelected = false;
             })
-            $(this.table_id).on('uncheck.bs.table', ()=>{
-                rows = $(this.table_id).bootstrapTable('getSelections')
+            $table.on('uncheck.bs.table', ()=>{
+                rows = $table.bootstrapTable('getSelections')
                 this.noTicketSelected = rows.length == 0 ? true : false               
             })
-            $(this.table_id).on('uncheck-all.bs.table', ()=>{
+            $table.on('uncheck-all.bs.table', ()=>{
                 this.noTicketSelected = true
             })
         },

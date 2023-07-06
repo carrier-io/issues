@@ -1,7 +1,5 @@
 function convertDatetime(datetimeStr) {
-    const datetimeObj = new Date(datetimeStr);
-    const formattedDatetime = `${datetimeObj.getDate().toString().padStart(2, '0')}.${(datetimeObj.getMonth() + 1).toString().padStart(2, '0')}.${datetimeObj.getFullYear()} ${datetimeObj.getHours().toString().padStart(2, '0')}:${datetimeObj.getMinutes().toString().padStart(2, '0')}:${datetimeObj.getSeconds().toString().padStart(2, '0')}`;
-    return formattedDatetime;
+    return new Date(datetimeStr + 'Z').toLocaleString();
 }
 
 descriptionFormatter = {
@@ -17,7 +15,6 @@ descriptionFormatter = {
           '"': '&quot;',
           "'": '&#039;'
         };
-        console.log(text)
         text = String(text);
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     },
