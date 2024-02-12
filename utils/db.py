@@ -2,7 +2,11 @@ from tools import db
 
 
 def init_db():
-    from plugins.issues import models
-    db.Base.metadata.create_all(bind=db.engine)
-    # db.get_shared_metadata().create_all(bind=db.engine)
+    from ..models.events import Event
+    from ..models.tags import Tag
+    from ..models.issues import Issue, issues_tags
+    from ..models.attachments import Attachment
+    from ..models.comments import Comment
+
+    db.get_shared_metadata().create_all(bind=db.engine)
 
