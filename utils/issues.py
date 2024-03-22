@@ -171,6 +171,7 @@ def parse_issue_payload(payload):
     report_id = payload.get("report_id")
     engagement = payload.get('engagement')
     project_id = payload.get('project_id')
+    board_id = payload.get('board_id')
     title = payload.get('title')
     description = payload.get('description')
     description = stringify_description(description)
@@ -181,6 +182,7 @@ def parse_issue_payload(payload):
         "source_type": source_type,
         "source_id": issue_id,
         "report_id": report_id,
+        "board_id": board_id,
         "snapshot": payload,
         "severity": payload.get("severity"),
         "scan_project": payload.get("project"),

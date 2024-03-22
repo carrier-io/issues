@@ -49,6 +49,11 @@ class Issue(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     STATUS_CHOICES = {
         'open':'open',
         'closed':'closed',
+        'postponed':'postponed',
+        'blocked':'blocked',
+        'in_review':'in_review',
+        'done':'done',
+        'in_progress':'in_progress',
     }
 
     SEVERITY_CHOICES = {
@@ -63,6 +68,7 @@ class Issue(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     title = Column(String(512), nullable=False)
     project_id = Column(Integer, nullable=False)
     report_id = Column(Integer, nullable=True)
+    board_id = Column(String(64), nullable=True, default=None)
     engagement = Column(String(64), nullable=True, default=None)
     severity = Column(ChoiceType(SEVERITY_CHOICES), nullable=False, default='medium')
     scan_project = Column(String(150), nullable=True)

@@ -14,7 +14,14 @@
   var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
   var view_row_id = "";
   var issues_filter_options = "{{url_for('api.v1.issues.filter_options', project_id=project_id)}}"
-
+  var all_boards = []
+  axios.get(`/api/v1/kanban/boards/${getSelectedProjectId()}`, {params: {}})
+    .then(response => {
+        all_boards = response.data['items']
+    })
+    .catch(err=> {
+        console.log(err)
+    })
   var attachmentUrl = "{{url_for('api.v1.issues.attachment', project_id=project_id, id='1').rstrip('1')}}"
   var attachmentsUrl = "{{url_for('api.v1.issues.attachments', project_id=project_id, issue_id='1').rstrip('1')}}"
   var comments_url = "{{ url_for('api.v1.issues.comments', project_id=project_id, issue_id='1').rstrip('1') }}"

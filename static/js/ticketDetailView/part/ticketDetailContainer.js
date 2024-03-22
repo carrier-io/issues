@@ -426,6 +426,14 @@ const TicketDetailContainer = {
                 }
 
             })
+        },
+        boardOptions(){
+            return all_boards.filter(board => board.id != -1).map(board => {
+                return {
+                    title: board.name,
+                    value: board.id,
+                }
+            })
         }
     },
     methods: {
@@ -461,16 +469,16 @@ const TicketDetailContainer = {
             ],
             typeOpts: [
                 {
-                    title: 'Vulnerability',
-                    value: 'Vulnerability',
+                    title: 'Activity',
+                    value: 'Activity',
                 }, 
                 {
                     title: 'Bug',
                     value: 'Bug',
                 },
                 {
-                    title: 'Activity',
-                    value: 'Activity',
+                    title: 'Risk',
+                    value: 'Risk',
                 },
             ],
             severityOpts: [
@@ -556,6 +564,16 @@ const TicketDetailContainer = {
                 :url="updateUrl"
                 field="engagement"
                 :options="engagementOptions"
+                @updated="propagateEvent"
+            >
+            </drop-down-field>
+
+            <drop-down-field
+                v-if="ticket"
+                :value="ticket?.board_id"
+                :url="updateUrl"
+                field="board_id"
+                :options="boardOptions"
                 @updated="propagateEvent"
             >
             </drop-down-field>
