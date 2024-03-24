@@ -1,12 +1,12 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import fields
 from ..models.issues import Issue
-from ..models.tags import Tag
+from ..models.tags import IssueTag
 
 
 class TagSchema(SQLAlchemyAutoSchema):
     class Meta:
-        model = Tag
+        model = IssueTag
 
 
 class IssueSchema(SQLAlchemyAutoSchema):

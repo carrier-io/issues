@@ -7,7 +7,7 @@ from tools import db
 from .mixins import TimestampModelMixin, CreateReadUpdateDeleteCountMixin
 
 
-class Tag(CreateReadUpdateDeleteCountMixin, TimestampModelMixin, db.Base):
+class IssueTag(CreateReadUpdateDeleteCountMixin, TimestampModelMixin, db.Base):
     __tablename__ = "issues_tags"
     # __table_args__ = {'schema': 'tenant'}
 

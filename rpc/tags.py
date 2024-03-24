@@ -19,7 +19,7 @@
 import json
 from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db
-from ..models.tags import Tag
+from ..models.tags import IssueTag
 from ..models.issues import Issue
 from ..utils.issues import add_issue_tag_line
 from ..utils.logs import log_update_issue
@@ -31,12 +31,12 @@ class RPC:  # pylint: disable=E1101,R0903
     @web.rpc("issues_get_tags", "get_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_tags(self, issue_id):
-        return Tag.query.filter_by(issue_id=issue_id).all()
+        return IssueTag.query.filter_by(issue_id=issue_id).all()
 
     @web.rpc("issues_get_all_tags", "get_all_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)
     def _get_all_tags(self, project_id):
-        return Tag.query.filter_by(project_id=project_id).all()
+        return IssueTag.query.filter_by(project_id=project_id).all()
 
     @web.rpc("issues_update_tags", "update_tags")
     @rpc_tools.wrap_exceptions(RuntimeError)

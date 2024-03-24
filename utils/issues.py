@@ -2,7 +2,7 @@ import uuid
 from jira import JIRA  # pylint: disable=E0401
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from ..models.issues import Issue
-from ..models.tags import Tag
+from ..models.tags import IssueTag
 from ..serializers.issue import issue_schema
 from tools import db
 from .logs import log_create_issue, log_tag_create, log_update_issue
@@ -11,10 +11,10 @@ from sqlalchemy import func
 
 
 def add_issue_tag_line(event_manager, project_id, issue, new_tag, commit=False):
-    tag = Tag.query.filter_by(project_id=project_id, tag=new_tag['tag']).first()
+    tag = IssueTag.query.filter_by(project_id=project_id, tag=new_tag['tag']).first()
     if not tag:
         new_tag['project_id'] = project_id
-        tag = Tag.create(new_tag)
+        tag = IssueTag.create(new_tag)
         log_tag_create(
             event_manager,
             project_id,

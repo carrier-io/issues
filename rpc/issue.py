@@ -27,7 +27,7 @@ from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import web  # pylint: disable=E0611,E0401
 from tools import rpc_tools, db # pylint: disable=E0401
 from ..models.issues import Issue
-from ..models.tags import Tag
+from ..models.tags import IssueTag
 from ..models.attachments import Attachment
 from ..serializers.attachment import attachments_schema, attachment_schema
 from sqlalchemy import func
@@ -201,7 +201,7 @@ class RPC:  # pylint: disable=E1101,R0903
         tags = flask_args.getlist('tags')
         if tags:
             tags = [int(x) for x in tags]
-            query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+            query = query.filter(Issue.tags.any(IssueTag.id.in_(tags)))
             del args['tags']
         
         if search:
@@ -286,7 +286,7 @@ def filter_by_args(query, project_id, args, flask_args):
     tags = flask_args.getlist('tags')
     if tags:
         tags = [int(x) for x in tags]
-        query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+        query = query.filter(Issue.tags.any(IssueTag.id.in_(tags)))
         del args['tags']
 
 
@@ -309,7 +309,7 @@ def apply_initial_filter(query, args: dict):
     for key, value in args.items():
         if key == 'tags':
             tags = [int(x) for x in value]
-            query = query.filter(Issue.tags.any(Tag.id.in_(tags)))
+            query = query.filter(Issue.tags.any(IssueTag.id.in_(tags)))
 
         elif type(value) is list:
             query = query.filter(getattr(Issue, key).in_(value))
