@@ -148,7 +148,11 @@ class RPC:  # pylint: disable=E1101,R0903
         tickets = []
         for status in statuses:
             args = dict(flask_args)
-            
+            list_boards = self.context.rpc_manager.timeout(10).kanban_list_boards(project_id)
+            for each in list_boards["items"]:
+                if each.hash_id == args["board_id"]:
+                    args["board_id"] = str(each.id)
+
             del args['mapping_field']
             args.pop('initialParams', None)
 
