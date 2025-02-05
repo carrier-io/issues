@@ -156,7 +156,7 @@ class RPC:  # pylint: disable=E1101,R0903
             del args['mapping_field']
             args.pop('initialParams', None)
 
-            limit = args.pop('limit', 10)
+            limit = args.pop('limit', 100)
             offset = args.pop('offset', 0)
 
             # Query the database for the tickets of each status
