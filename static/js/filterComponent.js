@@ -440,7 +440,11 @@ const FilterToolbarContainer = {
                     container_class="mr-2"
                     :itemsList="[
                         {id: 'open', title: 'Open'},
-                        {id: 'closed', title: 'Closed'},
+                        {id: 'postponed', title: 'Postponed'},
+                        {id: 'blocked', title: 'Blocked'},
+                        {id: 'in_review', title: 'In review'},
+                        {id: 'in_progress', title: 'In progress'},
+                        {id: 'done', title: 'Done'},
                     ]"
                     v-show="selected_filters.includes('status')"
                     @filterRemoved="removeFilter"
