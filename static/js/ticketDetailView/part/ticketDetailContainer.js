@@ -473,7 +473,7 @@ const TicketDetailContainer = {
                 })
         },
         setUsersOptions(users){
-            htmlTxt = this.generateHtmlOptions(users, 'id', 'email', this.assignee.id)
+            htmlTxt = this.generateHtmlOptions(users, 'id', 'email', this.assignee?.id)
             this.setOptions(htmlTxt, '#input-assignee-list')
         },
         assignToMe(){
