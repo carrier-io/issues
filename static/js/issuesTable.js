@@ -204,7 +204,6 @@ const IssuesTable = {
                             <th data-field="severity">Severity</th>
                             <th data-field="type">Type</th>
                             <th data-field="status">Status</th>
-                            <th data-field="source_type">Source</th>
                             <th data-field="assignee.name">Assignee</th>
                             <th data-field="engagement.name">Engagement</th>
                             <th data-field="tags" data-events="tagsEvents" data-formatter="TagsFormatter.format">Tags</th>

@@ -187,6 +187,7 @@ const FilterToolbarContainer = {
             types_options:[],
             source_options: [],
             tags_options: [],
+            assignee_options: [],
             filterMap: {},
         }
     },
@@ -218,6 +219,11 @@ const FilterToolbarContainer = {
                 } else {
                     listed_items = this.list_items
                 }
+                const index = listed_items.indexOf("source");
+                if (index > -1) {
+                    listed_items.splice(index, 1);
+                }
+                listed_items.push("assignee")
                 return listed_items.map((i, index) => {
                     if (typeof i === 'object') {
                         return {
@@ -272,6 +278,15 @@ const FilterToolbarContainer = {
             })
         },
 
+        getAssigneeOptions(assignees){
+            return assignees.map(assignee => {
+                return {
+                    id: assignee.id,
+                    title: assignee.email
+                }
+            })
+        },
+
         toCapilizedCase(str){
             return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
         },
@@ -303,6 +318,7 @@ const FilterToolbarContainer = {
             this.types_options = this.getFilterOptions(data['type'])
             this.source_options = this.getFilterOptions(data['source_type'])
             await this.fetchTags()  
+            await this.fetchAssignee()
         },
 
         removeFilter(item){
@@ -316,6 +332,11 @@ const FilterToolbarContainer = {
             const response = await axios.get(tags_api)
             data = response.data
             this.tags_options = this.getTagsOptions(data['items'])
+        },
+
+        async fetchAssignee(){
+            const response = await fetchUsersAPI()
+            this.assignee_options = this.getAssigneeOptions(response['rows'])
         },
 
         searchChangeHandler(e){
@@ -407,6 +428,17 @@ const FilterToolbarContainer = {
                         {id: 'info', title: 'Info'},
                     ]"
                     v-show="selected_filters.includes('severity')"
+                    @filterRemoved="removeFilter"
+                    @apply="applyFilter"
+                >
+                </removable-filter>
+
+                <removable-filter
+                    label="ASSIGNEE"
+                    filter_name="assignee"
+                    container_class="mr-2"
+                    :itemsList="assignee_options"
+                    v-show="selected_filters.includes('assignee')"
                     @filterRemoved="removeFilter"
                     @apply="applyFilter"
                 >
