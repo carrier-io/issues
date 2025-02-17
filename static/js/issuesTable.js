@@ -192,7 +192,7 @@ const IssuesTable = {
                     data-side-pagination="server"
                     data-pagination="true"
                     data-cache="false"
-                    data-page-list="[10, 25, 50, 100, all]"
+                    data-page-list="[10, 25, 50, 100]"
 
                     data-pagination-pre-text="<img src='/design-system/static/assets/ico/arrow_left.svg'>"
                     data-pagination-next-text="<img src='/design-system/static/assets/ico/arrow_right.svg'>"
