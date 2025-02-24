@@ -82,6 +82,8 @@ const IssuesTable = {
         handleTicketChange(ticket){
             this.selectedTicket = ticket
             $(this.table_id).bootstrapTable("refresh")
+            $('#input-ticket-start-date').val(this.selectedTicket?.start_date);
+            $('#input-ticket-end-date').val(this.selectedTicket?.end_date);
         },
 
         // Table events

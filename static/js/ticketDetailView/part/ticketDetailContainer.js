@@ -472,6 +472,32 @@ const TicketDetailContainer = {
                     showNotify("ERROR", err)
                 })
         },
+        updateStartDate(){
+            var start_date = $('#input-ticket-start-date').val()
+            data = {'start_date': start_date}
+            axios.put(this.updateUrl, data)
+                .then(response => {
+                    showNotify("SUCCESS", "Start date updated")
+                    data = {'start_date': start_date}
+                    this.$emit('updated', data)
+                })
+                .catch(err=> {
+                    showNotify("ERROR", err)
+                })
+        },
+        updateEndDate(){
+            var end_date = $('#input-ticket-end-date').val()
+            data = {'end_date': end_date}
+            axios.put(this.updateUrl, data)
+                .then(response => {
+                    showNotify("SUCCESS", "End date updated")
+                    data = {'end_date': end_date}
+                    this.$emit('updated', data)
+                })
+                .catch(err=> {
+                    showNotify("ERROR", err)
+                })
+        },
         setUsersOptions(users){
             htmlTxt = this.generateHtmlOptions(users, 'id', 'email', this.assignee?.id)
             this.setOptions(htmlTxt, '#input-assignee-list')
@@ -660,6 +686,22 @@ const TicketDetailContainer = {
                     </div>
                 </div>
             </div>
+            <div class="desc-row">
+                <div class="row-label"><span class="label">Start Date</span></div>
+                    <div class="row-value">
+                        <div>
+                         <input type="date" @change="updateStartDate()" name="start_date" id="input-ticket-start-date" class="form-control">
+                        </div>
+                    </div>
+            </div>
+            <div class="desc-row">
+                <div class="row-label"><span class="label">End Date</span></div>
+                    <div class="row-value">
+                        <div>
+                         <input type="date" @change="updateEndDate()" name="end_date" id="input-ticket-end-date" class="form-control">
+                        </div>
+                    </div>
+                </div>
         </div>    
     `
 }

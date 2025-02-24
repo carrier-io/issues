@@ -259,7 +259,7 @@ def get_changes(payload, obj: Issue):
     changes = {}
     for key in payload.keys():
         changes[key] = {
-            'old_value': obj.get_field_value(key),
+            'old_value': str(obj.get_field_value(key)),
             'new_value': payload[key],
         }
     return changes

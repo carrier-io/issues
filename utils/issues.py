@@ -190,6 +190,8 @@ def parse_issue_payload(payload):
         "assignee": payload.get('assignee'),
         "type": payload.get("type"),
         "status": "open",
+        "start_date": payload.get("start_date"),
+        "end_date": payload.get("end_date"),
         "state": {
             "value": "OPEN",
             "payload": None,

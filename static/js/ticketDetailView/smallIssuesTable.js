@@ -278,6 +278,8 @@ const SmallIssuesTable = {
         },
           
         selectAndScrollToTicket(){
+            $('#input-ticket-start-date').val(this.ticket?.start_date);
+            $('#input-ticket-end-date').val(this.ticket?.end_date);
             if (!this.ticket)
                 return
             $(`${this.table_id} tbody tr[data-uniqueid="${this.ticket.id}"]`).click()
