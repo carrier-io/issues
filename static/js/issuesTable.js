@@ -176,11 +176,6 @@ const IssuesTable = {
                         class="btn btn-secondary btn-sm btn-icon__sm mr-2">
                         <i class="fas fa-trash-alt"></i>
                     </button>
-                    <board-creation-modal
-                        :queryUrl="issues_url"
-                        :engagement="engagement"
-                    >
-                    </board-creation-modal>
                 </template>
 
             </filter-toolbar-container>
