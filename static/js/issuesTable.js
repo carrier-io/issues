@@ -30,14 +30,17 @@ const IssuesTable = {
             }
         })
 
-        $table.on('page-change.bs.table', (e, number) => {
-            this.pageNumber = number
-        })
-
-        $table.on('load-success.bs.table', (e, data) => {
-            itemsCount = data.total;
-            this.maxPageCount = Math.ceil(itemsCount/10)
-        })
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketId = urlParams.get('ticket');
+        if (ticketId) {
+            // Try to find and select the ticket in the table
+            $table.on('load-success.bs.table', (e, data) => {
+                const ticket = data.rows.find(row => String(row.id) === String(ticketId));
+                if (ticket) {
+                    this.selectedTicket = ticket;
+                }
+            });
+        }
     },  
     watch: {
         async selectedTicket(value){
@@ -80,10 +83,19 @@ const IssuesTable = {
         },
 
         handleTicketChange(ticket){
-            this.selectedTicket = ticket
-            $(this.table_id).bootstrapTable("refresh")
+            this.selectedTicket = ticket;
+            $(this.table_id).bootstrapTable("refresh");
             $('#input-ticket-start-date').val(this.selectedTicket?.start_date);
             $('#input-ticket-end-date').val(this.selectedTicket?.end_date);
+
+            // Update the URL parameter
+            const url = new URL(window.location);
+            if (ticket && ticket.id) {
+                url.searchParams.set('ticket', ticket.id);
+            } else {
+                url.searchParams.delete('ticket');
+            }
+            window.history.replaceState({}, '', url);
         },
 
         // Table events
@@ -189,7 +201,7 @@ const IssuesTable = {
                     data-side-pagination="server"
                     data-pagination="true"
                     data-cache="false"
-                    data-page-list="[10, 25, 50, 100]"
+                    data-page-list="[200]"
 
                     data-pagination-pre-text="<img src='/design-system/static/assets/ico/arrow_left.svg'>"
                     data-pagination-next-text="<img src='/design-system/static/assets/ico/arrow_right.svg'>"
