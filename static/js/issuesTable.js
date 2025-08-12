@@ -37,24 +37,23 @@ const IssuesTable = {
                 .then(resp => resp.json())
                 .then(data => {
                     const rows = data.rows || [];
-                    const pageSize = 10; // Set this to your actual page size
+                    const pageSize = $table.bootstrapTable('getOptions').pageSize;
                     const index = rows.findIndex(row => String(row.id) === String(ticketId));
                     if (index !== -1) {
                         const page = Math.floor(index / pageSize) + 1;
-                        // Wait for the table to finish its first load
-                        const onFirstLoad = (e, tableData) => {
-                            $table.off('load-success.bs.table', onFirstLoad); // Remove after first call
-                            $table.bootstrapTable('selectPage', page);
-                            // Now, when the correct page loads, select the ticket
-                            $table.on('load-success.bs.table', function onPageLoad(e, pageData) {
-                                const ticket = pageData.rows.find(row => String(row.id) === String(ticketId));
-                                if (ticket) {
-                                    this.selectedTicket = ticket;
-                                    $table.off('load-success.bs.table', onPageLoad); // Remove after found
-                                }
-                            }.bind(this));
-                        };
-                        $table.on('load-success.bs.table', onFirstLoad);
+                        const offset = (page - 1) * pageSize;
+                        // Refresh the table with the correct offset
+                        $table.bootstrapTable('refresh', {
+                            url: `${this.issues_url}?offset=${offset}&limit=${pageSize}`
+                        });
+                        // When the page loads, select the ticket
+                        $table.on('load-success.bs.table', function onPageLoad(e, pageData) {
+                            const ticket = pageData.rows.find(row => String(row.id) === String(ticketId));
+                            if (ticket) {
+                                this.selectedTicket = ticket;
+                                $table.off('load-success.bs.table', onPageLoad);
+                            }
+                        }.bind(this));
                     }
                 });
         }
