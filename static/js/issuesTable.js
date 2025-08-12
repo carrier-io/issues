@@ -21,27 +21,44 @@ const IssuesTable = {
             all_users: [],
         }
     },
-    mounted(){
-        this.setTableCheckEvents()
-        const $table = $(this.table_id)
+    mounted() {
+        this.setTableCheckEvents();
+        const $table = $(this.table_id);
         $table.on('click-row.bs.table', (e, row, $el, field) => {
-            if (field != "actions"){
-                this.selectedTicket = row
+            if (field != "actions") {
+                this.selectedTicket = row;
             }
-        })
+        });
 
         const urlParams = new URLSearchParams(window.location.search);
         const ticketId = urlParams.get('ticket');
         if (ticketId) {
-            // Try to find and select the ticket in the table
-            $table.on('load-success.bs.table', (e, data) => {
-                const ticket = data.rows.find(row => String(row.id) === String(ticketId));
-                if (ticket) {
-                    this.selectedTicket = ticket;
-                }
-            });
+            fetch(`${this.issues_url}?offset=0&limit=1000`)
+                .then(resp => resp.json())
+                .then(data => {
+                    const rows = data.rows || [];
+                    const pageSize = 10; // Set this to your actual page size
+                    const index = rows.findIndex(row => String(row.id) === String(ticketId));
+                    if (index !== -1) {
+                        const page = Math.floor(index / pageSize) + 1;
+                        // Wait for the table to finish its first load
+                        const onFirstLoad = (e, tableData) => {
+                            $table.off('load-success.bs.table', onFirstLoad); // Remove after first call
+                            $table.bootstrapTable('selectPage', page);
+                            // Now, when the correct page loads, select the ticket
+                            $table.on('load-success.bs.table', function onPageLoad(e, pageData) {
+                                const ticket = pageData.rows.find(row => String(row.id) === String(ticketId));
+                                if (ticket) {
+                                    this.selectedTicket = ticket;
+                                    $table.off('load-success.bs.table', onPageLoad); // Remove after found
+                                }
+                            }.bind(this));
+                        };
+                        $table.on('load-success.bs.table', onFirstLoad);
+                    }
+                });
         }
-    },  
+    },
     watch: {
         async selectedTicket(value){
             if (!value){
