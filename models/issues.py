@@ -3,8 +3,8 @@ from sqlalchemy.ext.mutable import MutableDict
 import sqlalchemy.types as types
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import (
-    String, 
-    Column, 
+    String,
+    Column,
     Integer,
     Date,
     Table,
@@ -86,3 +86,29 @@ class Issue(CreateReadUpdateDeleteCountMixin, NestedGetterSetterMixin, db.Base):
     end_date = Column(Date)
 
     tags = relationship("IssueTag", secondary=issues_tags, backref=backref("issues"))
+
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "hash_id": self.hash_id,
+            "title": self.title,
+            "project_id": self.project_id,
+            "report_id": self.report_id,
+            "board_id": self.board_id,
+            "engagement": self.engagement,
+            "severity": self.severity,
+            "scan_project": self.scan_project,
+            "asset": self.asset,
+            "type": self.type,
+            "status": self.status,
+            "source_type": self.source_type,
+            "source_id": self.source_id,
+            "description": self.description,
+            "snapshot": self.snapshot,
+            "state": self.state,
+            "external_link": self.external_link,
+            "assignee": self.assignee,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "tags": [tag.tag for tag in self.tags] if self.tags else [],
+        }
