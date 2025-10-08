@@ -164,7 +164,9 @@ class RPC:  # pylint: disable=E1101,R0903
             query = apply_initial_filter(query, initial_params)
             query = filter_by_args(query, project_id, args, flask_args)
             query = query.offset(offset).limit(limit)
-            status_tickets = query.all()
+
+            # Fetch valid tickets only
+            status_tickets = safe_query_all(query)
             tickets.extend(status_tickets)
         return len(tickets), tickets
     
@@ -253,6 +255,43 @@ def get_modal_field(modal, key: str):
     
     field = getattr(modal, key)
     return field
+
+def is_valid_date(date):
+    """
+    Helper function to check if a date is valid.
+    Returns True if the date is valid, False otherwise.
+    """
+    try:
+        if date is None:  # Allow NULL dates
+            return True
+        # Ensure the year is within a valid range
+        if date.year > 9999 or date.year < 1:
+            return False
+        return True
+    except Exception:
+        return False
+
+def safe_query_all(query):
+    """
+    Helper function to fetch valid rows from the query.
+    Skips rows with invalid start_date or end_date.
+    """
+    valid_tickets = []
+    try:
+        # Fetch all rows
+        tickets = query.all()
+        for ticket in tickets:
+            # Validate start_date and end_date
+            if is_valid_date(ticket.start_date) and is_valid_date(ticket.end_date):
+                valid_tickets.append(ticket)
+            else:
+                # Log the skipped ticket for debugging
+                log.info(f"Skipping ticket with invalid date: ID={ticket.id}, "
+                        f"start_date={ticket.start_date}, end_date={ticket.end_date}")
+    except ValueError as e:
+        # Log the error
+        log.error(f"Error fetching tickets: {e}")
+    return valid_tickets
 
 
 def get_changes(payload, obj: Issue):
